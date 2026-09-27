@@ -1,0 +1,60 @@
+{% extends 'pdf/_layout.html.twig' %}
+
+{% set d = demonstrativo %}
+
+{% block titulo %}Demonstrativo de Auxílio-Transporte{% endblock %}
+{% block subtitulo %}Competência {{ d.competencia|competencia }}{% endblock %}
+
+{% block conteudo %}
+    <table class="ficha">
+        <tr>
+            <td class="rotulo">Servidor</td><td><strong>{{ funcionario.nome }}</strong></td>
+            <td class="rotulo">Matrícula</td><td>{{ funcionario.matricula|matricula }}</td>
+        </tr>
+        <tr>
+            <td class="rotulo">Lotação</td><td>{{ funcionario.setor.sigla }}</td>
+            <td class="rotulo">Cargo</td><td>{{ funcionario.cargo.nome }}</td>
+        </tr>
+    </table>
+
+    <h2>Itinerário diário</h2>
+    <table>
+        <thead><tr><th>Sentido</th><th>Linha</th><th>Itinerário</th><th class="num">Tarifa</th></tr></thead>
+        <tbody>
+            {% for t in solicitacao.trajetos %}
+                <tr>
+                    <td>{{ t.sentido.label }}</td>
+                    <td>{{ t.linha.codigo }}</td>
+                    <td>{{ t.linha.nome }}</td>
+                    <td class="num">{{ t.linha.tarifaCentavos|centavos }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Cálculo</h2>
+    <table>
+        <tbody>
+            <tr><td>Valor diário das conduções</td><td class="num">{{ d.valorDiarioCentavos|centavos }}</td></tr>
+            <tr><td>Dias efetivamente trabalhados (conforme ponto) / dias úteis</td><td class="num">{{ d.diasTrabalhados }} / {{ d.diasUteis }}</td></tr>
+            <tr><td><strong>Valor bruto</strong> ({{ d.valorDiarioCentavos|centavos }} × {{ d.diasTrabalhados }})</td><td class="num"><strong>{{ d.valorBrutoCentavos|centavos }}</strong></td></tr>
+            <tr>
+                <td>
+                    Cota do servidor: {{ d.percentualDesconto|number_format(1) }}% de {{ d.salarioBaseCentavos|centavos }}
+                    × {{ d.diasTrabalhados }}/{{ d.diasUteis }} dias
+                </td>
+                <td class="num" style="color:#dc2626">−{{ d.valorDescontoCentavos|centavos }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td style="background:#1e3a5f;color:#fff;font-weight:bold;">VALOR A RECEBER</td>
+                <td class="num" style="background:#1e3a5f;color:#fff;font-weight:bold;font-size:11px;">{{ d.valorLiquidoCentavos|centavos }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    {% if d.valorLiquidoCentavos == 0 %}
+        <p style="margin-top:10px;color:#64748b;">A cota do servidor supera o custo das conduções no período; não há valor a receber.</p>
+    {% endif %}
+{% endblock %}

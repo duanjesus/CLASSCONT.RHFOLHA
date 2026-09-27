@@ -1,0 +1,59 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Início{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Olá, ' ~ app.user.nome|split(' ')|first ~ '!', 'Resumo da gestão de pessoal em ' ~ 'now'|date('d/m/Y') ~ '.') }}
+
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {% for indicador in indicadores %}
+            {% set conteudo %}
+                <p class="text-sm text-slate-500">{{ indicador.rotulo }}</p>
+                <p class="mt-2 text-3xl font-semibold text-slate-900">{{ indicador.valor }}</p>
+            {% endset %}
+            {% if indicador.rota %}
+                <a href="{{ path(indicador.rota) }}" class="cartao block p-5 transition hover:border-marca-500">{{ conteudo }}</a>
+            {% else %}
+                <div class="cartao p-5">{{ conteudo }}</div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if not anterior_fechada %}
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <div>
+                <p class="font-medium text-amber-900">A competência <span class="capitalize">{{ competencia_anterior|competencia }}</span> ainda está aberta.</p>
+                <p class="text-sm text-amber-800">Revise as pendências e feche o mês para enviar à folha de pagamento.</p>
+            </div>
+            <a href="{{ path('admin_fechamentos') }}" class="btn btn-primario">Ir para fechamento</a>
+        </div>
+    {% endif %}
+
+    <section class="cartao mt-6 overflow-hidden">
+        <header class="border-b border-slate-100 px-5 py-4">
+            <h2 class="font-semibold text-slate-900">Justificativas aguardando avaliação</h2>
+            <p class="text-sm text-slate-500">A chefia imediata avalia pelo sistema; o RH pode avaliar qualquer pedido.</p>
+        </header>
+        <div class="overflow-x-auto">
+            <table class="tabela">
+                <thead>
+                    <tr><th>Servidor</th><th>Setor</th><th>Dia</th><th>Tipo</th><th>Enviada em</th></tr>
+                </thead>
+                <tbody>
+                    {% for j in pendentes %}
+                        <tr>
+                            <td class="font-medium text-slate-900">{{ j.funcionario.nome }}</td>
+                            <td>{{ j.funcionario.setor.sigla }}</td>
+                            <td>{{ j.data|date('d/m/Y') }}</td>
+                            <td>{{ j.tipo.label }}</td>
+                            <td>{{ j.criadoEm|date('d/m/Y H:i') }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">{{ ui.vazio('Nenhuma justificativa pendente. 🎉') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

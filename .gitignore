@@ -1,0 +1,7 @@
+# Configuração local de ferramentas
+.claude/
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

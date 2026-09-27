@@ -1,0 +1,18 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+    excludePaths:
+        - tests/bootstrap.php
+    ignoreErrors:
+        # Entidades ligadas a formulários começam vazias (propriedades anuláveis em memória);
+        # a obrigatoriedade é garantida por #[Assert\NotNull] antes de chegar ao banco.
+        -
+            identifier: doctrine.columnType
+            paths: [src/Entity/Feriado.php, src/Entity/Funcionario.php]
+        -
+            identifier: doctrine.associationType
+            path: src/Entity/Funcionario.php

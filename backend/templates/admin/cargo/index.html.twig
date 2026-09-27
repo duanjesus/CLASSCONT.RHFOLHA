@@ -1,0 +1,31 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Cargos{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Cargos', 'O salário-base é usado no cálculo do desconto do auxílio-transporte.', path('admin_cargos_novo'), 'Novo cargo') }}
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr><th>Cargo</th><th class="text-right">Salário-base</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for cargo in cargos %}
+                    <tr>
+                        <td class="font-medium text-slate-900">{{ cargo.nome }}</td>
+                        {# format_currency vem do twig/intl-extra #}
+                        <td class="text-right tabular-nums">{{ cargo.salarioBase|format_currency('BRL', locale: 'pt_BR') }}</td>
+                        <td class="space-x-3 text-right whitespace-nowrap">
+                            <a href="{{ path('admin_cargos_editar', {id: cargo.id}) }}" class="btn-link">Editar</a>
+                            {{ ui.botao_excluir(path('admin_cargos_excluir', {id: cargo.id}), 'excluir-cargo-' ~ cargo.id) }}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="3">{{ ui.vazio('Nenhum cargo cadastrado.') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

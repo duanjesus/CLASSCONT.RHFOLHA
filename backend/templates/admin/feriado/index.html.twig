@@ -1,0 +1,39 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Feriados {{ ano }}{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Feriados de ' ~ ano, 'Dias sem expediente: não geram falta e não contam como dia útil.', path('admin_feriados_novo'), 'Novo feriado') }}
+
+    <div class="mb-4 flex gap-2 text-sm">
+        {% for a in (ano - 1)..(ano + 1) %}
+            <a href="{{ path('admin_feriados', {ano: a}) }}"
+               class="rounded-lg px-3 py-1.5 {{ a == ano ? 'bg-marca-700 text-white' : 'border border-slate-300 bg-white hover:bg-slate-50' }}">{{ a }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr><th>Data</th><th>Dia da semana</th><th>Descrição</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for feriado in feriados %}
+                    <tr>
+                        <td class="font-medium tabular-nums text-slate-900">{{ feriado.data|date('d/m/Y') }}</td>
+                        {# format_date (intl-extra) com padrão ICU: "EEEE" = dia da semana por extenso #}
+                        <td class="capitalize">{{ feriado.data|format_date(pattern: 'EEEE', locale: 'pt_BR') }}</td>
+                        <td>{{ feriado.descricao }}</td>
+                        <td class="space-x-3 text-right whitespace-nowrap">
+                            <a href="{{ path('admin_feriados_editar', {id: feriado.id}) }}" class="btn-link">Editar</a>
+                            {{ ui.botao_excluir(path('admin_feriados_excluir', {id: feriado.id}), 'excluir-feriado-' ~ feriado.id) }}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">{{ ui.vazio('Nenhum feriado cadastrado para ' ~ ano ~ '.') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

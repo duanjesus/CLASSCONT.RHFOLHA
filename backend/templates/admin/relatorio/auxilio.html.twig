@@ -1,0 +1,63 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Auxílio-transporte{% endblock %}
+
+{% block conteudo %}
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-slate-900">Folha do auxílio-transporte</h1>
+            <p class="mt-1 text-sm text-slate-500">Dias trabalhados vêm do ponto; o desconto é proporcional aos dias trabalhados.</p>
+        </div>
+        {{ ui.seletor_competencia(competencia, 'admin_relatorio_auxilio') }}
+    </div>
+
+    {# reduce: soma os líquidos (em centavos) de todas as linhas #}
+    {% set total_liquido = linhas|reduce((soma, l) => soma + (l.demonstrativo.valorLiquidoCentavos ?? 0), 0) %}
+    {% set total_bruto = linhas|reduce((soma, l) => soma + (l.demonstrativo.valorBrutoCentavos ?? 0), 0) %}
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr>
+                    <th>Servidor</th><th>Itinerário</th>
+                    <th class="text-right">Valor/dia</th><th class="text-right">Dias</th>
+                    <th class="text-right">Bruto</th><th class="text-right">Desconto</th><th class="text-right">A pagar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in linhas %}
+                    {% set d = l.demonstrativo %}
+                    <tr>
+                        <td>
+                            <div class="font-medium text-slate-900">{{ l.funcionario.nome }}</div>
+                            <div class="text-xs text-slate-500">{{ l.funcionario.setor.sigla }} · {{ l.funcionario.cargo.nome }}</div>
+                        </td>
+                        <td class="text-xs text-slate-600">
+                            {% for t in l.solicitacao.trajetos %}
+                                <span class="mr-1 inline-block rounded bg-slate-100 px-1.5 py-0.5">{{ t.sentido.label }} {{ t.linha.codigo }}</span>
+                            {%- endfor %}
+                        </td>
+                        <td class="text-right tabular-nums">{{ d.valorDiarioCentavos|centavos }}</td>
+                        <td class="text-right tabular-nums">{{ d.diasTrabalhados }}/{{ d.diasUteis }}</td>
+                        <td class="text-right tabular-nums">{{ d.valorBrutoCentavos|centavos }}</td>
+                        <td class="text-right tabular-nums text-red-600">−{{ d.valorDescontoCentavos|centavos }}</td>
+                        <td class="text-right font-semibold tabular-nums text-slate-900">{{ d.valorLiquidoCentavos|centavos }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7">{{ ui.vazio('Nenhum auxílio-transporte vigente.') }}</td></tr>
+                {% endfor %}
+            </tbody>
+            {% if linhas is not empty %}
+                <tfoot>
+                    <tr class="bg-slate-50 font-semibold">
+                        <td colspan="4" class="px-4 py-3">Total ({{ linhas|length }} servidor{{ linhas|length > 1 ? 'es' }})</td>
+                        <td class="px-4 py-3 text-right tabular-nums">{{ total_bruto|centavos }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums text-red-600">−{{ (total_bruto - total_liquido)|centavos }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums">{{ total_liquido|centavos }}</td>
+                    </tr>
+                </tfoot>
+            {% endif %}
+        </table>
+    </div>
+{% endblock %}

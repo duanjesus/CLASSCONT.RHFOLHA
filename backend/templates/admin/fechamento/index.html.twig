@@ -1,0 +1,51 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Fechamento mensal{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Fechamento mensal', 'Ao fechar uma competência, o ponto daquele mês fica bloqueado para novas justificativas e avaliações.') }}
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr><th>Competência</th><th>Situação</th><th>Responsável</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for linha in linhas %}
+                    {% set c = linha.competencia ~ '' %}
+                    <tr>
+                        <td class="font-medium capitalize text-slate-900">{{ linha.competencia|competencia }}</td>
+                        <td>
+                            {% if linha.fechamento %}
+                                <span class="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2 py-0.5 text-xs font-medium text-white">🔒 Fechada</span>
+                            {% elseif not linha.pode_fechar %}
+                                <span class="rounded-full bg-marca-50 px-2 py-0.5 text-xs font-medium text-marca-700">Em andamento</span>
+                            {% else %}
+                                <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Aberta</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-sm text-slate-500">
+                            {% if linha.fechamento %}
+                                {{ linha.fechamento.fechadoPor.nome ?? '—' }} em {{ linha.fechamento.fechadoEm|date('d/m/Y H:i') }}
+                            {% endif %}
+                        </td>
+                        <td class="text-right">
+                            {% if linha.fechamento %}
+                                <form method="post" action="{{ path('admin_fechamentos_reabrir', {competencia: c}) }}" data-confirmar="Reabrir {{ linha.competencia|competencia }}?">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('reabrir-' ~ c) }}">
+                                    <button class="btn-link">Reabrir</button>
+                                </form>
+                            {% elseif linha.pode_fechar %}
+                                <form method="post" action="{{ path('admin_fechamentos_fechar', {competencia: c}) }}" data-confirmar="Fechar {{ linha.competencia|competencia }}? Esta ação bloqueia o ponto do mês.">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('fechar-' ~ c) }}">
+                                    <button class="btn btn-primario py-1.5">Fechar mês</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

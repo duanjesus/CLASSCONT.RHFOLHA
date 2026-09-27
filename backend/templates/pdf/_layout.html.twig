@@ -1,0 +1,65 @@
+{#
+ # Layout base dos documentos PDF (Dompdf).
+ # Dompdf entende CSS 2.1 + parte do CSS3: nada de flex/grid/Tailwind, por isso CSS próprio.
+ #}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block titulo %}{% endblock %}</title>
+    <style>
+        @page { margin: 90px 36px 60px 36px; }
+        body { font-family: "DejaVu Sans", sans-serif; font-size: 9.5px; color: #1e293b; }
+        header { position: fixed; top: -70px; left: 0; right: 0; height: 55px; border-bottom: 2px solid #1e3a5f; }
+        header .marca { font-size: 14px; font-weight: bold; color: #1e3a5f; }
+        header .sub { color: #64748b; font-size: 9px; }
+        header .doc { position: absolute; right: 0; top: 4px; text-align: right; }
+        header .doc strong { font-size: 12px; color: #0f1f33; }
+        footer { position: fixed; bottom: -40px; left: 0; right: 0; height: 25px; border-top: 1px solid #cbd5e1;
+                 color: #64748b; font-size: 8px; padding-top: 5px; }
+        h2 { font-size: 11px; color: #1e3a5f; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .5px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f1f5f9; color: #475569; font-size: 8px; text-transform: uppercase; text-align: left; padding: 5px 6px; }
+        td { padding: 4px 6px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+        .num { text-align: right; }
+        .nowrap { white-space: nowrap; }
+
+        .ficha td { border: none; padding: 2px 6px 2px 0; }
+        .ficha .rotulo { color: #64748b; width: 90px; }
+
+        /* Mesmo partial do painel (_tabela_espelho), estilizado para impressão */
+        .espelho .linha-inativa td { color: #94a3b8; background: #f8fafc; }
+        .espelho .dia-semana { color: #94a3b8; font-size: 8px; }
+        .espelho .observacao { color: #b45309; font-size: 7.5px; }
+        .espelho .saldo-positivo { color: #047857; font-weight: bold; }
+        .espelho .saldo-negativo { color: #dc2626; font-weight: bold; }
+        .espelho .situacao { font-size: 8px; }
+        .espelho .situacao-FALTA { color: #dc2626; font-weight: bold; }
+        .espelho .situacao-INCOMPLETO { color: #b45309; font-weight: bold; }
+        .espelho .situacao-ABONADO { color: #0369a1; }
+        .espelho .situacao-FERIADO { color: #6d28d9; }
+        .espelho tfoot td { background: #f1f5f9; font-weight: bold; border-top: 1px solid #94a3b8; }
+
+        .assinaturas { margin-top: 45px; }
+        .assinaturas td { border: none; text-align: center; width: 50%; padding: 0 25px; }
+        .assinaturas .linha { border-top: 1px solid #334155; padding-top: 4px; }
+        .selo { display: inline-block; padding: 2px 6px; border: 1px solid #1e293b; font-weight: bold; font-size: 8px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="marca">CLASSCONT.RHFOLHA</div>
+        <div class="sub">Sistema de Gestão de Pessoal</div>
+        <div class="doc">
+            <strong>{{ block('titulo') }}</strong><br>
+            <span class="sub">{% block subtitulo %}{% endblock %}</span>
+        </div>
+    </header>
+    <footer>
+        Emitido em {{ emitido_em|date('d/m/Y') }} às {{ emitido_em|date('H:i') }} · Documento gerado eletronicamente
+    </footer>
+
+    {% block conteudo %}{% endblock %}
+</body>
+</html>

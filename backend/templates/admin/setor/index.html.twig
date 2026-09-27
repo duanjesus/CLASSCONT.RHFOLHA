@@ -1,0 +1,32 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Setores{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Setores', 'Unidades administrativas e suas chefias imediatas.', path('admin_setores_novo'), 'Novo setor') }}
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr><th>Sigla</th><th>Nome</th><th>Chefia</th><th class="text-right">Servidores</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for setor in setores %}
+                    <tr>
+                        <td class="font-semibold text-slate-900">{{ setor.sigla }}</td>
+                        <td>{{ setor.nome }}</td>
+                        <td>{{ setor.chefe.nome ?? '—' }}</td>
+                        <td class="text-right tabular-nums">{{ setor.funcionarios|length }}</td>
+                        <td class="space-x-3 text-right whitespace-nowrap">
+                            <a href="{{ path('admin_setores_editar', {id: setor.id}) }}" class="btn-link">Editar</a>
+                            {{ ui.botao_excluir(path('admin_setores_excluir', {id: setor.id}), 'excluir-setor-' ~ setor.id, 'Excluir o setor ' ~ setor.sigla ~ '?') }}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">{{ ui.vazio('Nenhum setor cadastrado.') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

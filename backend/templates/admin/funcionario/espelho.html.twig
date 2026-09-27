@@ -1,0 +1,47 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Espelho · {{ funcionario.nome }}{% endblock %}
+
+{% block conteudo %}
+    <a href="{{ path('admin_funcionarios') }}" class="btn-link mb-4 inline-block">&larr; Funcionários</a>
+
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-slate-900">Espelho de ponto</h1>
+            <p class="mt-1 text-sm text-slate-500">
+                {{ funcionario.nome }} · mat. {{ funcionario.matricula|matricula }} · {{ funcionario.setor.sigla }} · jornada {{ funcionario.jornadaDiariaMinutos|horas }}
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            {{ ui.seletor_competencia(espelho.competencia, 'admin_funcionarios_espelho', {id: funcionario.id}) }}
+            <a class="btn btn-secundario" target="_blank"
+               href="{{ path('admin_funcionarios_espelho', {id: funcionario.id, competencia: espelho.competencia ~ '', formato: 'pdf'}) }}">
+                Gerar PDF
+            </a>
+        </div>
+    </div>
+
+    {% if fechado %}
+        <p class="mb-4 rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm text-slate-600">🔒 Competência fechada — dados enviados à folha.</p>
+    {% endif %}
+
+    {# Resumo em cartões: array de tuplas percorrido com for #}
+    <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {% for rotulo, valor in {
+            'Saldo do mês': espelho.saldoMinutos|horas(true),
+            'Faltas': espelho.faltas,
+            'Dias abonados': espelho.diasAbonados,
+            'Dias trabalhados': espelho.diasTrabalhados ~ ' de ' ~ espelho.diasUteis,
+        } %}
+            <div class="cartao p-4">
+                <p class="text-xs uppercase tracking-wide text-slate-500">{{ rotulo }}</p>
+                <p class="mt-1 text-xl font-semibold tabular-nums {{ loop.first and espelho.saldoMinutos < 0 ? 'text-red-600' : 'text-slate-900' }}">{{ valor }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="cartao overflow-x-auto">
+        {% include 'shared/_tabela_espelho.html.twig' with {espelho: espelho} only %}
+    </div>
+{% endblock %}

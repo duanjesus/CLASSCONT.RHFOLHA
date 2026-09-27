@@ -1,0 +1,48 @@
+{#
+ # Tabela do espelho de ponto — compartilhada entre a tela do painel e o PDF.
+ # Só usa classes semânticas (espelho, situacao-*, saldo-*): cada contexto
+ # define seu próprio CSS (Tailwind no painel, CSS puro no PDF/Dompdf).
+ #
+ # Uso: {% include 'shared/_tabela_espelho.html.twig' with {espelho: espelho} only %}
+ #}
+{% set dias_semana = {1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex', 6: 'sáb', 7: 'dom'} %}
+
+<table class="tabela espelho">
+    <thead>
+        <tr>
+            <th>Dia</th>
+            <th>Batidas</th>
+            <th class="num">Trabalhado</th>
+            <th class="num">Previsto</th>
+            <th class="num">Saldo</th>
+            <th>Situação</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dia in espelho.dias %}
+            {% set sem_expediente = dia.situacao.value in ['FIM_DE_SEMANA', 'FUTURO'] %}
+            <tr class="{{ sem_expediente ? 'linha-inativa' : '' }}">
+                <td class="nowrap">{{ dia.data|date('d/m') }} <span class="dia-semana">{{ dias_semana[dia.data|date('N')] }}</span></td>
+                <td class="batidas">
+                    {{- dia.batidas|map(b => b|date('H:i'))|join('  ·  ') ?: '—' -}}
+                    {% if dia.observacao %}<div class="observacao">{{ dia.observacao }}</div>{% endif %}
+                </td>
+                <td class="num">{{ dia.trabalhadoMinutos ? dia.trabalhadoMinutos|horas : '—' }}</td>
+                <td class="num">{{ dia.esperadoMinutos ? dia.esperadoMinutos|horas : '—' }}</td>
+                <td class="num {{ dia.saldoMinutos > 0 ? 'saldo-positivo' : (dia.saldoMinutos < 0 ? 'saldo-negativo') }}">
+                    {{- dia.saldoMinutos ? dia.saldoMinutos|horas(true) : '—' -}}
+                </td>
+                <td><span class="situacao situacao-{{ dia.situacao.value }}">{{ dia.situacao.label }}</span></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2">Totais do mês</td>
+            <td class="num">{{ espelho.trabalhadoMinutos|horas }}</td>
+            <td class="num">{{ espelho.esperadoMinutos|horas }}</td>
+            <td class="num {{ espelho.saldoMinutos >= 0 ? 'saldo-positivo' : 'saldo-negativo' }}">{{ espelho.saldoMinutos|horas(true) }}</td>
+            <td>{{ espelho.faltas }} falta(s)</td>
+        </tr>
+    </tfoot>
+</table>

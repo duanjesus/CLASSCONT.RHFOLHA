@@ -1,0 +1,32 @@
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titulo %}Espelho de Ponto{% endblock %}
+{% block subtitulo %}Competência {{ espelho.competencia|competencia }}{% if fechado %} · <span class="selo">FECHADA</span>{% endif %}{% endblock %}
+
+{% block conteudo %}
+    <table class="ficha">
+        <tr>
+            <td class="rotulo">Servidor</td><td><strong>{{ funcionario.nome }}</strong></td>
+            <td class="rotulo">Matrícula</td><td>{{ funcionario.matricula|matricula }}</td>
+        </tr>
+        <tr>
+            <td class="rotulo">Lotação</td><td>{{ funcionario.setor.nome }} ({{ funcionario.setor.sigla }})</td>
+            <td class="rotulo">Cargo</td><td>{{ funcionario.cargo.nome }}</td>
+        </tr>
+        <tr>
+            <td class="rotulo">Jornada diária</td><td>{{ funcionario.jornadaDiariaMinutos|horas }}</td>
+            <td class="rotulo">Dias úteis</td><td>{{ espelho.diasUteis }} (trabalhados: {{ espelho.diasTrabalhados }}, abonados: {{ espelho.diasAbonados }})</td>
+        </tr>
+    </table>
+
+    <h2>Registros</h2>
+    {# O mesmo partial usado na tela do painel #}
+    {% include 'shared/_tabela_espelho.html.twig' with {espelho: espelho} only %}
+
+    <table class="assinaturas">
+        <tr>
+            <td><div class="linha">{{ funcionario.nome }}<br>Servidor(a)</div></td>
+            <td><div class="linha">{{ funcionario.setor.chefe.nome ?? '________________' }}<br>Chefia imediata</div></td>
+        </tr>
+    </table>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Funcionários{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Funcionários', funcionarios|length ~ ' registro(s)' ~ (busca ? ' para "' ~ busca ~ '"' : '') ~ '.', path('admin_funcionarios_novo'), 'Novo funcionário') }}
+
+    <form method="get" class="mb-4 flex max-w-md gap-2" role="search">
+        <input type="search" name="q" value="{{ busca }}" placeholder="Buscar por nome, matrícula ou e-mail" class="campo" aria-label="Buscar">
+        <button class="btn btn-secundario">Buscar</button>
+    </form>
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr><th>Matrícula</th><th>Nome</th><th>Lotação</th><th>Cargo</th><th>Jornada</th><th>Perfil</th><th>Situação</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for f in funcionarios %}
+                    <tr class="{{ f.ativo ? '' : 'opacity-60' }}">
+                        <td class="tabular-nums">{{ f.matricula|matricula }}</td>
+                        <td>
+                            <div class="font-medium text-slate-900">{{ f.nome }}</div>
+                            <div class="text-xs text-slate-500">{{ f.email }}</div>
+                        </td>
+                        <td>{{ f.setor.sigla }}</td>
+                        <td>{{ f.cargo.nome }}</td>
+                        <td class="tabular-nums">{{ f.jornadaDiariaMinutos|horas }}</td>
+                        <td class="space-x-1">
+                            {% if f.rh %}<span class="rounded bg-marca-100 px-1.5 py-0.5 text-xs font-medium text-marca-700">RH</span>{% endif %}
+                            {% if f.isChefia %}<span class="rounded bg-teal-50 px-1.5 py-0.5 text-xs font-medium text-teal-700">Chefia</span>{% endif %}
+                        </td>
+                        <td>{{ ui.sim_nao(f.ativo, 'Ativo', 'Inativo') }}</td>
+                        <td class="space-x-3 text-right whitespace-nowrap">
+                            <a href="{{ path('admin_funcionarios_espelho', {id: f.id}) }}" class="btn-link">Espelho</a>
+                            <a href="{{ path('admin_funcionarios_editar', {id: f.id}) }}" class="btn-link">Editar</a>
+                            <form method="post" action="{{ path('admin_funcionarios_alternar', {id: f.id}) }}" class="inline"
+                                  data-confirmar="{{ f.ativo ? 'Desativar' : 'Reativar' }} {{ f.nome }}?">
+                                <input type="hidden" name="_token" value="{{ csrf_token('alternar-' ~ f.id) }}">
+                                <button class="text-sm font-medium {{ f.ativo ? 'text-red-600 hover:text-red-800' : 'text-emerald-700 hover:text-emerald-900' }} hover:underline">
+                                    {{ f.ativo ? 'Desativar' : 'Reativar' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8">{{ ui.vazio('Nenhum funcionário encontrado.') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

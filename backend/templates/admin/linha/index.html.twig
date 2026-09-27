@@ -1,0 +1,32 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Linhas de ônibus{% endblock %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Linhas de ônibus', 'Tarifas usadas no cálculo do auxílio-transporte.', path('admin_linhas_nova'), 'Nova linha') }}
+
+    <div class="cartao overflow-x-auto">
+        <table class="tabela">
+            <thead>
+                <tr><th>Código</th><th>Itinerário</th><th class="text-right">Tarifa</th><th>Situação</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for linha in linhas %}
+                    <tr>
+                        <td class="font-semibold text-slate-900">{{ linha.codigo }}</td>
+                        <td>{{ linha.nome }}</td>
+                        <td class="text-right tabular-nums">{{ linha.tarifaCentavos|centavos }}</td>
+                        <td>{{ ui.sim_nao(linha.ativa, 'Ativa', 'Inativa') }}</td>
+                        <td class="space-x-3 text-right whitespace-nowrap">
+                            <a href="{{ path('admin_linhas_editar', {id: linha.id}) }}" class="btn-link">Editar</a>
+                            {{ ui.botao_excluir(path('admin_linhas_excluir', {id: linha.id}), 'excluir-linha-' ~ linha.id, 'Excluir a linha ' ~ linha.codigo ~ '? Linhas usadas em solicitações devem ser apenas inativadas.') }}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">{{ ui.vazio('Nenhuma linha cadastrada.') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

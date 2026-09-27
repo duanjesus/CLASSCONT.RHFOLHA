@@ -1,0 +1,23 @@
+parameters:
+    app.auxilio.percentual_desconto: '%env(float:AUXILIO_PERCENTUAL_DESCONTO)%'
+    app.email_remetente: 'nao-responda@classcont.local'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            float $percentualDescontoAuxilio: '%app.auxilio.percentual_desconto%'
+            string $emailRemetente: '%app.email_remetente%'
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # Calculadoras de domínio são classes puras (sem dependência de framework),
+    # registradas explicitamente para poderem ser injetadas nos services.
+    App\Domain\Ponto\CalculadoraEspelho: ~
+    App\Domain\Auxilio\CalculadoraAuxilio: ~

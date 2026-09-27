@@ -1,0 +1,62 @@
+{#
+ # Macros do painel. Uso:
+ #   {% import 'admin/_macros.html.twig' as ui %}
+ #   {{ ui.cabecalho('Setores', 'Unidades e chefias', path('admin_setores_novo'), 'Novo setor') }}
+ #}
+
+{% macro cabecalho(titulo, subtitulo = null, acao_url = null, acao_rotulo = null) %}
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-slate-900">{{ titulo }}</h1>
+            {% if subtitulo %}<p class="mt-1 text-sm text-slate-500">{{ subtitulo }}</p>{% endif %}
+        </div>
+        {% if acao_url %}
+            <a href="{{ acao_url }}" class="btn btn-primario">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
+                {{ acao_rotulo }}
+            </a>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{# Badge de status de avaliação (enum StatusAvaliacao) #}
+{% macro status(status) %}
+    {% set cores = {
+        'PENDENTE': 'bg-amber-50 text-amber-700 ring-amber-600/20',
+        'APROVADA': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+        'RECUSADA': 'bg-red-50 text-red-700 ring-red-600/20',
+        'SUBSTITUIDA': 'bg-slate-100 text-slate-600 ring-slate-500/20',
+    } %}
+    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ cores[status.value] ?? '' }}">
+        {{- status.label -}}
+    </span>
+{% endmacro %}
+
+{% macro sim_nao(valor, sim = 'Sim', nao = 'Não') %}
+    {% if valor %}
+        <span class="inline-flex items-center gap-1 text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>{{ sim }}</span>
+    {% else %}
+        <span class="inline-flex items-center gap-1 text-slate-400"><span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>{{ nao }}</span>
+    {% endif %}
+{% endmacro %}
+
+{# Botão de exclusão: POST + token CSRF + confirmação (tratada em assets/app.js) #}
+{% macro botao_excluir(url, token_id, confirmacao = 'Confirma a exclusão?') %}
+    <form method="post" action="{{ url }}" class="inline" data-confirmar="{{ confirmacao }}">
+        <input type="hidden" name="_token" value="{{ csrf_token(token_id) }}">
+        <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800 hover:underline">Excluir</button>
+    </form>
+{% endmacro %}
+
+{% macro vazio(mensagem) %}
+    <div class="px-6 py-12 text-center text-sm text-slate-500">{{ mensagem }}</div>
+{% endmacro %}
+
+{# Navegação entre meses: « agosto/2026 » #}
+{% macro seletor_competencia(competencia, rota, parametros = {}) %}
+    <div class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-sm shadow-sm">
+        <a class="px-3 py-2 text-slate-500 hover:text-marca-700" href="{{ path(rota, parametros|merge({competencia: competencia.anterior ~ ''})) }}" aria-label="Mês anterior">&larr;</a>
+        <span class="min-w-36 border-x border-slate-200 px-3 py-2 text-center font-medium capitalize">{{ competencia|competencia }}</span>
+        <a class="px-3 py-2 text-slate-500 hover:text-marca-700" href="{{ path(rota, parametros|merge({competencia: competencia.posterior ~ ''})) }}" aria-label="Próximo mês">&rarr;</a>
+    </div>
+{% endmacro %}
