@@ -67,11 +67,12 @@ jobs:
           php bin/console --env=test doctrine:schema:validate
           php bin/console --env=test doctrine:fixtures:load -n --purge-with-truncate
 
-      - name: Testes (PHPUnit)
-        run: php bin/phpunit
-
+      # Antes dos testes: as telas Twig do painel referenciam o CSS compilado
       - name: Build do CSS do painel (Tailwind)
         run: php bin/console tailwind:build --minify
+
+      - name: Testes (PHPUnit)
+        run: php bin/phpunit
 
   frontend:
     name: Frontend (React)
