@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use App\DataFixtures\AppFixtures;
 use App\Entity\Funcionario;
 use App\Repository\FuncionarioRepository;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -23,13 +24,19 @@ abstract class ApiTestCase extends WebTestCase
         $this->client = static::createClient();
     }
 
-    /** Faz login pela API e retorna o JWT. */
+    /**
+     * Gera o JWT direto pelo serviço do Lexik (o login real é testado em AutenticacaoTest;
+     * aqui evitamos dezenas de logins que acionariam o login_throttling).
+     */
     protected function token(string $email): string
     {
-        $this->client->jsonRequest('POST', '/api/login', ['email' => $email, 'password' => AppFixtures::SENHA_PADRAO]);
-        self::assertResponseIsSuccessful();
+        return static::getContainer()->get(JWTTokenManagerInterface::class)->create($this->funcionario($email));
+    }
 
-        return $this->json()['token'];
+    /** Login real pelo endpoint POST /api/login. */
+    protected function login(string $email, string $senha = AppFixtures::SENHA_PADRAO): void
+    {
+        $this->client->jsonRequest('POST', '/api/login', ['email' => $email, 'password' => $senha]);
     }
 
     /**

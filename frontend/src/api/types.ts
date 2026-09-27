@@ -42,6 +42,7 @@ export type SituacaoDia =
   | 'FIM_DE_SEMANA'
   | 'EM_ANDAMENTO'
   | 'FUTURO'
+  | 'ANTES_ADMISSAO'
 
 export interface DiaEspelho {
   data: string

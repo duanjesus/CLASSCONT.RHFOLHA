@@ -10,6 +10,7 @@ use App\Entity\Justificativa;
 use App\Enum\TipoJustificativa;
 use App\Exception\RegraNegocioException;
 use App\Repository\FechamentoCompetenciaRepository;
+use App\Repository\FeriadoRepository;
 use App\Repository\JustificativaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Clock\ClockInterface;
@@ -22,6 +23,7 @@ final class JustificativaService
     public function __construct(
         private readonly JustificativaRepository $justificativas,
         private readonly FechamentoCompetenciaRepository $fechamentos,
+        private readonly FeriadoRepository $feriados,
         private readonly EntityManagerInterface $em,
         private readonly Notificador $notificador,
         private readonly ClockInterface $clock,
@@ -37,6 +39,9 @@ final class JustificativaService
             throw new RegraNegocioException('Não é possível justificar uma data futura.');
         }
         $this->garantirCompetenciaAberta($data);
+        if ((int) $data->format('N') >= 6 || null !== $this->feriados->findOneBy(['data' => $data])) {
+            throw new RegraNegocioException('Só é possível justificar dias úteis (sem expediente não há o que abonar).');
+        }
         if ($data < $hoje->modify(\sprintf('-%d days', self::PRAZO_DIAS))) {
             throw new RegraNegocioException(\sprintf('O prazo para justificar é de %d dias.', self::PRAZO_DIAS));
         }

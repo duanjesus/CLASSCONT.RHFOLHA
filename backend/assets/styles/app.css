@@ -58,7 +58,7 @@
   .espelho .situacao-INCOMPLETO { @apply bg-amber-50 text-amber-700; }
   .espelho .situacao-ABONADO { @apply bg-sky-50 text-sky-700; }
   .espelho .situacao-FERIADO { @apply bg-violet-50 text-violet-700; }
-  .espelho .situacao-FIM_DE_SEMANA, .espelho .situacao-FUTURO { @apply bg-slate-100 text-slate-500; }
+  .espelho .situacao-FIM_DE_SEMANA, .espelho .situacao-FUTURO, .espelho .situacao-ANTES_ADMISSAO { @apply bg-slate-100 text-slate-500; }
   .espelho .situacao-EM_ANDAMENTO { @apply bg-marca-50 text-marca-700; }
   .espelho .linha-inativa td { @apply text-slate-400; }
   .espelho .saldo-positivo { @apply font-medium text-emerald-700; }

@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api;
 
+use App\Repository\FeriadoRepository;
 use App\Tests\Functional\ApiTestCase;
 
 final class JustificativaTest extends ApiTestCase
 {
     public function testFluxoCompletoDeAprovacaoPelaChefia(): void
     {
-        $ontem = (new \DateTimeImmutable('yesterday'))->format('Y-m-d');
+        $diaUtil = $this->ultimoDiaUtil()->format('Y-m-d');
 
         $criada = $this->api('POST', '/api/justificativas', 'ana@classcont.local', [
-            'data' => $ontem,
+            'data' => $diaUtil,
             'tipo' => 'SERVICO_EXTERNO',
             'motivo' => 'Reunião no órgão parceiro durante todo o expediente.',
         ]);
@@ -84,6 +85,30 @@ final class JustificativaTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame('Não é possível justificar uma data futura.', $erro['erro']);
+    }
+
+    public function testNaoJustificaFimDeSemana(): void
+    {
+        $erro = $this->api('POST', '/api/justificativas', 'ana@classcont.local', [
+            'data' => (new \DateTimeImmutable('last saturday'))->format('Y-m-d'),
+            'tipo' => 'FALTA_JUSTIFICADA',
+            'motivo' => 'Tentativa de abonar um sábado.',
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertStringContainsString('dias úteis', $erro['erro']);
+    }
+
+    /** Dia útil mais recente antes de hoje (pula fins de semana e feriados cadastrados). */
+    private function ultimoDiaUtil(): \DateTimeImmutable
+    {
+        $feriados = static::getContainer()->get(FeriadoRepository::class);
+        $dia = new \DateTimeImmutable('yesterday');
+        while ((int) $dia->format('N') >= 6 || null !== $feriados->findOneBy(['data' => $dia])) {
+            $dia = $dia->modify('-1 day');
+        }
+
+        return $dia;
     }
 
     private function pendenteDoBruno(): int

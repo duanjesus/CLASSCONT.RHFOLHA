@@ -40,10 +40,11 @@ Sistema administrativo de **gestão de pessoal**: folha de ponto eletrônica, ba
 - **Tolerância de 10 min/dia** (CLT, art. 58 §1º): diferenças até esse limite são zeradas.
 - Feriado e fim de semana não têm jornada prevista; trabalho nesses dias vira crédito.
 - O dia de hoje fica "em andamento" e os dias futuros não entram no saldo.
+- Dias anteriores à admissão não geram jornada nem falta.
 
 **Justificativas**
 - O servidor pede o abono de um dia, e a **chefia imediata** do setor dele ou o **RH** avaliam (`AvaliacaoVoter`). **Ninguém avalia o próprio pedido.**
-- Não é possível justificar uma data futura. O prazo é de 30 dias, e só vale uma justificativa ativa por dia.
+- Só se justificam **dias úteis** que já passaram. O prazo é de 30 dias, e só vale uma justificativa ativa por dia.
 - A recusa exige motivo. O resultado vai por e-mail, com template Twig.
 - Uma justificativa aprovada **abona** o dia no espelho.
 
@@ -62,6 +63,12 @@ líquido  = bruto − desconto   (nunca negativo)
 **Perfis**
 - `ROLE_CHEFIA` **não é gravado** no banco: é derivado de o funcionário "ser chefe de algum setor" (`Funcionario::getRoles()`). Assim o papel nunca fica dessincronizado do cadastro.
 - Funcionários não são excluídos, só desativados, porque o histórico de ponto é documento funcional.
+
+**Segurança**
+- Um funcionário desativado perde o acesso na hora, **inclusive com um JWT já emitido**. O `UserChecker` roda em toda autenticação.
+- **Proteção contra força bruta**: `login_throttling` na API e no painel permite 5 tentativas erradas por e-mail/IP por minuto.
+- Na API, só erros de negócio ou de entrada (`RegraNegocioException`, `CompetenciaInvalidaException`) devolvem a mensagem ao cliente (422). Qualquer outra exceção vira 500, sem expor detalhes internos.
+- As ações destrutivas do painel exigem POST com token CSRF.
 
 ---
 
@@ -141,9 +148,9 @@ docker compose exec php composer require <pacote>
 
 ## Qualidade
 
-- **60 testes / 223 asserções**:
+- **65 testes / 238 asserções**:
   - *Unitários*: cálculo do espelho (tolerância, faltas, abonos, feriados), auxílio (proporcionalidade, arredondamento, teto), `Competencia` e os filtros Twig.
-  - *Funcionais*: login JWT, permissões (colega × chefia × outro setor × RH), o fluxo completo de aprovação com e-mail, PDF, validação e o smoke test de todas as telas Twig do painel.
+  - *Funcionais*: login JWT, bloqueio de desativados, força bruta, permissões (colega × chefia × outro setor × RH), o fluxo completo de aprovação com e-mail, PDF, validação e o smoke test de todas as telas Twig do painel.
 - O **DAMA DoctrineTestBundle** isola cada teste numa transação.
 - **PHPStan nível 6** sem erros, **PHP-CS-Fixer** (regras @Symfony), `lint:twig` e `lint:container`.
 - O **GitHub Actions** roda backend (com Postgres) e frontend (lint e build) a cada push.

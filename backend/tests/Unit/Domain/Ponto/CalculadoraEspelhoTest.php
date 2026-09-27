@@ -129,6 +129,19 @@ final class CalculadoraEspelhoTest extends TestCase
         self::assertSame(6 * 480, $espelho->trabalhadoMinutos);
     }
 
+    public function testDiasAntesDaAdmissaoNaoSaoFalta(): void
+    {
+        // Admitido em 15/09: os dias úteis anteriores não geram jornada nem falta
+        $espelho = $this->calculadora->calcular(
+            $this->setembro, self::JORNADA, [], [], [], new \DateTimeImmutable('2026-09-17'), new \DateTimeImmutable('2026-09-15'),
+        );
+
+        self::assertSame(SituacaoDia::AntesDaAdmissao, $this->doDia($espelho, '2026-09-14')->situacao);
+        self::assertSame(0, $this->doDia($espelho, '2026-09-14')->esperadoMinutos);
+        self::assertSame(SituacaoDia::Falta, $this->doDia($espelho, '2026-09-15')->situacao);
+        self::assertSame(2, $espelho->faltas); // só 15 e 16/09
+    }
+
     public function testMinutosTrabalhadosSomaApenasPares(): void
     {
         $t = static fn (string $h) => new \DateTimeImmutable("2026-09-01 $h");

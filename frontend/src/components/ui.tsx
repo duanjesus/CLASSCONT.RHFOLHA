@@ -118,6 +118,7 @@ const situacoes: Record<SituacaoDia, { rotulo: string; classe: string }> = {
   FIM_DE_SEMANA: { rotulo: 'Fim de semana', classe: 'bg-slate-100 text-slate-500' },
   EM_ANDAMENTO: { rotulo: 'Hoje', classe: 'bg-marca-50 text-marca-700' },
   FUTURO: { rotulo: '—', classe: 'text-slate-400' },
+  ANTES_ADMISSAO: { rotulo: 'Antes da admissão', classe: 'bg-slate-100 text-slate-500' },
 }
 
 export function BadgeSituacao({ situacao }: { situacao: SituacaoDia }) {

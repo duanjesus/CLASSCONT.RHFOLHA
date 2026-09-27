@@ -16,6 +16,7 @@ enum SituacaoDia: string
     /** Dia de hoje: ainda não entra no saldo. */
     case EmAndamento = 'EM_ANDAMENTO';
     case Futuro = 'FUTURO';
+    case AntesDaAdmissao = 'ANTES_ADMISSAO';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum SituacaoDia: string
             self::FimDeSemana => 'Fim de semana',
             self::EmAndamento => 'Em andamento',
             self::Futuro => '—',
+            self::AntesDaAdmissao => 'Antes da admissão',
         };
     }
 }

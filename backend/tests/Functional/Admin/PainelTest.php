@@ -62,6 +62,14 @@ final class PainelTest extends ApiTestCase
         yield ['/admin/relatorios/auxilio-transporte', 'Folha do auxílio-transporte'];
     }
 
+    public function testCompetenciaMalformadaNoPainelRetorna400(): void
+    {
+        $this->client->loginUser($this->funcionario('rh@classcont.local'), 'admin');
+        $this->client->request('GET', '/admin/relatorios/auxilio-transporte?competencia=abc');
+
+        self::assertResponseStatusCodeSame(400);
+    }
+
     public function testCadastroDeSetorComValidacao(): void
     {
         $this->client->loginUser($this->funcionario('rh@classcont.local'), 'admin');

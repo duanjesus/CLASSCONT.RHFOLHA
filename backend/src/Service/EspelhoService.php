@@ -34,6 +34,7 @@ final class EspelhoService
             feriados: $this->feriados->mapaDaCompetencia($competencia),
             abonos: $this->justificativas->abonosNaCompetencia($funcionario, $competencia),
             hoje: \DateTimeImmutable::createFromInterface($this->clock->now()),
+            dataAdmissao: $funcionario->getDataAdmissao(),
         );
     }
 }

@@ -50,10 +50,24 @@ export function mensagemErro(error: unknown): string {
   return 'Não foi possível completar a operação. Tente novamente.'
 }
 
-/** Baixa um PDF autenticado (gerado pelo Twig no backend) e abre em nova aba. */
+/**
+ * Baixa um PDF autenticado (gerado pelo Twig no backend) e abre em nova aba.
+ * A aba é aberta ANTES do await: navegadores só liberam pop-ups disparados
+ * diretamente pelo clique; depois do download apenas trocamos o endereço dela.
+ */
 export async function abrirPdf(url: string, params: Record<string, string>): Promise<void> {
-  const resp = await api.get<Blob>(url, { params, responseType: 'blob' })
-  const href = URL.createObjectURL(resp.data)
-  window.open(href, '_blank', 'noopener')
-  setTimeout(() => URL.revokeObjectURL(href), 60_000)
+  const aba = window.open('', '_blank')
+  try {
+    const resp = await api.get<Blob>(url, { params, responseType: 'blob' })
+    const href = URL.createObjectURL(resp.data)
+    if (aba) aba.location.href = href
+    else window.location.href = href
+    setTimeout(() => URL.revokeObjectURL(href), 60_000)
+  } catch (erro) {
+    aba?.close()
+    throw erro
+  }
 }
+
+/** Endereço do painel Twig do RH (configurável por VITE_ADMIN_URL). */
+export const URL_PAINEL_RH = import.meta.env.VITE_ADMIN_URL ?? 'http://localhost:8081/admin'

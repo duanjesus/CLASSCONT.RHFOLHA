@@ -70,9 +70,11 @@ final class AuxilioService
     public function avaliar(SolicitacaoAuxilio $solicitacao, Funcionario $avaliador, bool $aprovar, ?string $observacao): void
     {
         if ($aprovar) {
-            // O pedido aprovado passa a ser o vigente; o anterior deixa de valer.
-            $this->solicitacoes->vigente($solicitacao->getFuncionario())?->substituir();
+            // Valida e aprova primeiro; só então o vigente anterior deixa de valer
+            // (se a aprovação falhar, nada muda).
+            $anterior = $this->solicitacoes->vigente($solicitacao->getFuncionario());
             $solicitacao->aprovar($avaliador, $observacao, $this->agora());
+            $anterior?->substituir();
         } else {
             $solicitacao->recusar($avaliador, $observacao, $this->agora());
         }

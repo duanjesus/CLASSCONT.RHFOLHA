@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
-import { mensagemErro } from '../api/client'
+import { mensagemErro, URL_PAINEL_RH } from '../api/client'
 import { useAuth } from '../auth/useAuth'
 import { Alerta, Botao } from '../components/ui'
 import { classeCampo, classeRotulo } from '../components/estilos'
@@ -51,7 +51,7 @@ export function Login() {
         </form>
 
         <p className="mt-6 text-center text-xs text-marca-100/70">
-          Servidores do RH também acessam o <a className="underline hover:text-white" href="http://localhost:8081/admin">painel administrativo</a>.
+          Servidores do RH também acessam o <a className="underline hover:text-white" href={URL_PAINEL_RH}>painel administrativo</a>.
         </p>
       </div>
     </div>

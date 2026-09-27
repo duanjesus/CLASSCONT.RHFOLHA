@@ -24,6 +24,10 @@ security:
             pattern: ^/api/login$
             stateless: true
             provider: funcionarios
+            user_checker: App\Security\FuncionarioAtivoChecker
+            # Força bruta: 5 tentativas erradas por e-mail+IP a cada minuto → HTTP 429
+            login_throttling:
+                max_attempts: 5
             json_login:
                 check_path: /api/login
                 username_path: email
@@ -36,12 +40,16 @@ security:
             pattern: ^/api
             stateless: true
             provider: funcionarios
+            user_checker: App\Security\FuncionarioAtivoChecker
             jwt: ~
 
         # Painel administrativo em Twig: sessão + formulário de login
         admin:
             lazy: true
             provider: funcionarios
+            user_checker: App\Security\FuncionarioAtivoChecker
+            login_throttling:
+                max_attempts: 5
             form_login:
                 login_path: admin_login
                 check_path: admin_login

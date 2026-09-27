@@ -79,7 +79,7 @@ export function EspelhoPonto() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {espelho.dias.map((dia) => {
-                  const inativo = dia.situacao === 'FIM_DE_SEMANA' || dia.situacao === 'FUTURO'
+                  const inativo = ['FIM_DE_SEMANA', 'FUTURO', 'ANTES_ADMISSAO'].includes(dia.situacao)
                   return (
                     <tr key={dia.data} className={cx(inativo ? 'bg-slate-50/60 text-slate-400' : 'text-slate-700', 'hover:bg-slate-50')}>
                       <td className="whitespace-nowrap px-4 py-2.5">

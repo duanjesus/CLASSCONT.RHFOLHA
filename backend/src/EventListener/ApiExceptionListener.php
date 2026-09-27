@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\EventListener;
 
+use App\Exception\CompetenciaInvalidaException;
 use App\Exception\RegraNegocioException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
@@ -25,13 +27,20 @@ final class ApiExceptionListener
 
     public function __invoke(ExceptionEvent $event): void
     {
+        $e = $event->getThrowable();
+
         if (!str_starts_with($event->getRequest()->getPathInfo(), '/api')) {
+            // No painel Twig, ?competencia= malformada vira 400 (e não erro 500)
+            if ($e instanceof CompetenciaInvalidaException) {
+                $event->setThrowable(new BadRequestHttpException($e->getMessage(), $e));
+            }
+
             return;
         }
 
-        $e = $event->getThrowable();
-
-        if ($e instanceof RegraNegocioException || $e instanceof \InvalidArgumentException) {
+        // Só exceções de negócio/entrada viram 422 com a mensagem; qualquer outra
+        // (bug, falha de infraestrutura) segue como 500 sem expor detalhes internos.
+        if ($e instanceof RegraNegocioException || $e instanceof CompetenciaInvalidaException) {
             $event->setResponse(self::resposta(['erro' => $e->getMessage()], 422));
 
             return;

@@ -20,7 +20,7 @@
     </thead>
     <tbody>
         {% for dia in espelho.dias %}
-            {% set sem_expediente = dia.situacao.value in ['FIM_DE_SEMANA', 'FUTURO'] %}
+            {% set sem_expediente = dia.situacao.value in ['FIM_DE_SEMANA', 'FUTURO', 'ANTES_ADMISSAO'] %}
             <tr class="{{ sem_expediente ? 'linha-inativa' : '' }}">
                 <td class="nowrap">{{ dia.data|date('d/m') }} <span class="dia-semana">{{ dias_semana[dia.data|date('N')] }}</span></td>
                 <td class="batidas">

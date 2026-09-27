@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use App\Exception\CompetenciaInvalidaException;
+
 /** Value object para um mês de referência da folha (ex.: "2026-09"). */
 final readonly class Competencia implements \Stringable
 {
@@ -12,7 +14,7 @@ final readonly class Competencia implements \Stringable
         public int $mes,
     ) {
         if ($mes < 1 || $mes > 12 || $ano < 2000 || $ano > 2100) {
-            throw new \InvalidArgumentException('Competência inválida.');
+            throw new CompetenciaInvalidaException('Competência inválida.');
         }
     }
 
@@ -21,11 +23,11 @@ final readonly class Competencia implements \Stringable
         return new self($ano, $mes);
     }
 
-    /** @throws \InvalidArgumentException */
+    /** @throws CompetenciaInvalidaException */
     public static function fromString(string $valor): self
     {
         if (!preg_match('/^(\d{4})-(\d{2})$/', $valor, $m)) {
-            throw new \InvalidArgumentException('Competência deve estar no formato AAAA-MM.');
+            throw new CompetenciaInvalidaException('Competência deve estar no formato AAAA-MM.');
         }
 
         return new self((int) $m[1], (int) $m[2]);

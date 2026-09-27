@@ -18,6 +18,7 @@ use App\Enum\SituacaoDia;
  *  - Fim de semana e feriado têm jornada esperada zero; se houver trabalho, vira saldo positivo.
  *  - Tolerância de 10 min/dia (CLT, art. 58 §1º): diferenças até esse limite são desconsideradas.
  *  - Hoje fica "em andamento" e dias futuros não entram no saldo.
+ *  - Dias anteriores à admissão não geram jornada nem falta.
  */
 final class CalculadoraEspelho
 {
@@ -35,8 +36,10 @@ final class CalculadoraEspelho
         array $feriados,
         array $abonos,
         \DateTimeImmutable $hoje,
+        ?\DateTimeImmutable $dataAdmissao = null,
     ): EspelhoMensal {
         $hojeStr = $hoje->format('Y-m-d');
+        $admissaoStr = $dataAdmissao?->format('Y-m-d');
         $dias = [];
         $diasUteis = 0;
 
@@ -47,6 +50,11 @@ final class CalculadoraEspelho
             $feriado = $feriados[$chave] ?? null;
             $diaUtil = !$fimDeSemana && null === $feriado;
             $diasUteis += $diaUtil ? 1 : 0;
+
+            if (null !== $admissaoStr && $chave < $admissaoStr) {
+                $dias[] = new DiaEspelho($data, [], 0, 0, 0, SituacaoDia::AntesDaAdmissao);
+                continue;
+            }
 
             $dias[] = $this->calcularDia(
                 $data,
