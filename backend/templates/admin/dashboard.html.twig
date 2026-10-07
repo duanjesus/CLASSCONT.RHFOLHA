@@ -20,6 +20,18 @@
         {% endfor %}
     </div>
 
+    {% if emails_com_falha > 0 %}
+        <div role="alert" class="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
+            <p class="font-medium text-red-900">
+                {{ emails_com_falha }} e-mail{{ emails_com_falha == 1 ? ' não pôde ser enviado' : 's não puderam ser enviados' }} depois de 3 tentativas.
+            </p>
+            <p class="mt-1 text-sm text-red-800">
+                As avaliações foram gravadas normalmente; só o aviso ao servidor não saiu. Peça à TI para verificar o servidor de e-mail e reenviar com
+                <code class="rounded bg-red-100 px-1 py-0.5 text-xs">php bin/console messenger:failed:retry</code>.
+            </p>
+        </div>
+    {% endif %}
+
     {% if not anterior_fechada %}
         <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-5">
             <div>

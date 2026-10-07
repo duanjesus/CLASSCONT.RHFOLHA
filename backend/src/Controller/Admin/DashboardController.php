@@ -9,6 +9,7 @@ use App\Repository\FechamentoCompetenciaRepository;
 use App\Repository\FuncionarioRepository;
 use App\Repository\JustificativaRepository;
 use App\Repository\SolicitacaoAuxilioRepository;
+use App\Service\FilaDeEmails;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -22,6 +23,7 @@ final class DashboardController extends AdminController
         SolicitacaoAuxilioRepository $auxilios,
         FechamentoCompetenciaRepository $fechamentos,
         ClockInterface $clock,
+        FilaDeEmails $fila,
     ): Response {
         $anterior = Competencia::daData($clock->now())->anterior();
 
@@ -35,6 +37,7 @@ final class DashboardController extends AdminController
             'pendentes' => $justificativas->ultimasPendentes(5),
             'competencia_anterior' => $anterior,
             'anterior_fechada' => $fechamentos->estaFechada($anterior),
+            'emails_com_falha' => $fila->falhas(),
         ]);
     }
 }

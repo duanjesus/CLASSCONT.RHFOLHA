@@ -6,6 +6,8 @@ namespace App\Tests\Functional\Api;
 
 use App\Repository\FeriadoRepository;
 use App\Tests\Functional\ApiTestCase;
+use Symfony\Component\Mailer\Messenger\SendEmailMessage;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 final class JustificativaTest extends ApiTestCase
 {
@@ -31,8 +33,15 @@ final class JustificativaTest extends ApiTestCase
         self::assertSame('APROVADA', $avaliada['status']);
         self::assertSame('Rafael Lima', $avaliada['avaliadoPor']);
 
-        // E-mail (template Twig) enviado ao servidor
-        self::assertEmailCount(1);
+        // O e-mail (template Twig) não é enviado dentro da requisição: vai para a fila
+        // do Messenger, já renderizado, e o worker é quem fala com o SMTP.
+        self::assertEmailCount(0);
+        self::assertQueuedEmailCount(1);
+        $fila = static::getContainer()->get('messenger.transport.async');
+        self::assertInstanceOf(InMemoryTransport::class, $fila);
+        self::assertCount(1, $fila->getSent());
+        self::assertInstanceOf(SendEmailMessage::class, $fila->getSent()[0]->getMessage());
+
         $email = self::getMailerMessage();
         self::assertNotNull($email);
         self::assertEmailAddressContains($email, 'to', 'ana@classcont.local');

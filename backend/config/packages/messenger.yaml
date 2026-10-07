@@ -1,0 +1,30 @@
+framework:
+    messenger:
+        # Depois de esgotar as tentativas, a mensagem vai para a fila "failed" em vez de sumir.
+        # Consultar:  php bin/console messenger:failed:show
+        # Reenviar:   php bin/console messenger:failed:retry
+        failure_transport: failed
+
+        transports:
+            # Fila no próprio PostgreSQL (tabela messenger_messages, criada por migration).
+            # Sem infraestrutura extra; trocar por RabbitMQ/Redis é só mudar o DSN.
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 5000       # 5 s
+                    multiplier: 4     # 5 s → 20 s → 80 s
+            failed: 'doctrine://default?queue_name=failed&auto_setup=0'
+
+        routing:
+            # Todo e-mail enviado pelo Mailer entra na fila: a requisição que
+            # aprova/recusa um pedido não espera o servidor SMTP responder.
+            Symfony\Component\Mailer\Messenger\SendEmailMessage: async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                # Nos testes a fila fica em memória e é inspecionada pelos asserts
+                async: 'in-memory://'
+                failed: 'in-memory://'

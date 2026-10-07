@@ -19,6 +19,32 @@ services:
       db:
         condition: service_healthy
 
+  # Consome a fila do Messenger (envio de e-mails). Espera o php terminar a
+  # instalação/migrations e reinicia sozinho a cada hora (--time-limit) ou se cair.
+  # Em dev, depois de alterar código usado pelo worker: docker compose restart worker
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    command:
+      - sh
+      - -c
+      - |
+        until php bin/console messenger:stats async > /dev/null 2>&1; do
+          echo "Aguardando a aplicação ficar pronta..."; sleep 3
+        done
+        exec php bin/console messenger:consume async --time-limit=3600 --memory-limit=128M -v
+    restart: unless-stopped
+    volumes:
+      - ./backend:/var/www/app
+      - backend_vendor:/var/www/app/vendor
+      - backend_var:/var/www/app/var
+    environment:
+      DATABASE_URL: postgresql://rhfolha:rhfolha@db:5432/rhfolha?serverVersion=16&charset=utf8
+      MAILER_DSN: smtp://mailpit:1025
+    depends_on:
+      - php
+
   nginx:
     image: nginx:1.27-alpine
     ports:

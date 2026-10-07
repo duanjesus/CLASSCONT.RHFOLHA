@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Admin;
 
 use App\Tests\Functional\ApiTestCase;
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /** Smoke test das telas Twig do painel + regras de acesso. */
@@ -60,6 +61,22 @@ final class PainelTest extends ApiTestCase
         yield ['/admin/linhas', 'Linhas de ônibus'];
         yield ['/admin/fechamentos', 'Fechamento mensal'];
         yield ['/admin/relatorios/auxilio-transporte', 'Folha do auxílio-transporte'];
+    }
+
+    public function testPainelAvisaQuandoHaEmailNaFilaDeFalhas(): void
+    {
+        $this->client->loginUser($this->funcionario('rh@classcont.local'), 'admin');
+
+        $this->client->request('GET', '/admin');
+        self::assertSelectorNotExists('[role="alert"]');
+
+        static::getContainer()->get(Connection::class)->insert('messenger_messages', [
+            'body' => '{}', 'headers' => '{}', 'queue_name' => 'failed',
+            'created_at' => '2026-10-07 10:00:00', 'available_at' => '2026-10-07 10:00:00',
+        ]);
+
+        $this->client->request('GET', '/admin');
+        self::assertSelectorTextContains('[role="alert"]', '1 e-mail não pôde ser enviado');
     }
 
     public function testCompetenciaMalformadaNoPainelRetorna400(): void

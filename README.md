@@ -77,6 +77,11 @@ líquido  = bruto − desconto   (nunca negativo)
 - O nome do autor e o rótulo do registro são gravados como texto, então o histórico continua legível mesmo que o cadastro mude depois.
 - As batidas de ponto ficam de fora (já são um registro por si só), assim como cargas feitas pelo console.
 
+**E-mail em segundo plano**
+- Aprovar ou recusar um pedido não espera o servidor de e-mail: o aviso entra numa fila (Symfony Messenger, tabela `messenger_messages` no próprio PostgreSQL) e o container `worker` faz o envio.
+- Se o envio falhar, há **3 novas tentativas** com espera crescente (5 s, 20 s, 80 s). Esgotadas, a mensagem vai para a fila `failed` em vez de se perder, e o painel do RH mostra um alerta.
+- O e-mail é renderizado pelo Twig antes de entrar na fila, e o contexto leva só valores simples: nenhuma entidade do Doctrine é serializada.
+
 ---
 
 ## Como rodar
@@ -122,6 +127,14 @@ docker compose exec php sh -c "php bin/console -e test doctrine:database:create 
 docker compose exec php vendor/bin/phpstan analyse
 docker compose exec php vendor/bin/php-cs-fixer fix --dry-run
 
+# Fila de e-mails: situação, mensagens que falharam e reenvio
+docker compose exec php php bin/console messenger:stats
+docker compose exec php php bin/console messenger:failed:show
+docker compose exec php php bin/console messenger:failed:retry
+
+# Depois de alterar código usado pelo worker (ele mantém o código em memória)
+docker compose restart worker
+
 # Instalar um pacote PHP (vendor/ fica num volume do Docker)
 docker compose exec php composer require <pacote>
 ```
@@ -132,7 +145,7 @@ docker compose exec php composer require <pacote>
 
 ## Qualidade
 
-- **74 testes / 301 asserções**:
+- **75 testes / 309 asserções**:
   - *Unitários*: cálculo do espelho (tolerância, faltas, abonos, feriados), auxílio (proporcionalidade, arredondamento, teto), `Competencia` e os filtros Twig.
   - *Funcionais*: login JWT, bloqueio de desativados, força bruta, permissões (colega × chefia × outro setor × RH), o fluxo completo de aprovação com e-mail, PDF, validação, trilha de auditoria (inclusive que a senha não vaza) e o smoke test de todas as telas Twig do painel.
 - O **DAMA DoctrineTestBundle** isola cada teste numa transação.

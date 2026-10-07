@@ -2,7 +2,6 @@
  # E-mail transacional (TemplatedEmail). Clientes de e-mail exigem HTML simples
  # com estilos inline — por isso não usa o layout do painel.
  #}
-{% set aprovado = status.value == 'APROVADA' %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <body style="margin:0;padding:24px;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#1e293b;">
@@ -15,16 +14,16 @@
         </tr>
         <tr>
             <td style="padding:28px;">
-                <p style="margin:0 0 16px;">Olá, {{ destinatario.nome|split(' ')|first }}.</p>
+                <p style="margin:0 0 16px;">Olá, {{ primeiro_nome }}.</p>
                 <p style="margin:0 0 16px;">Seu pedido foi avaliado:</p>
 
                 <table role="presentation" width="100%" style="border:1px solid #e2e8f0;border-radius:8px;">
                     <tr><td style="padding:14px 16px;">
                         <div style="font-size:13px;color:#64748b;">{{ descricao_pedido }}</div>
                         <div style="margin-top:6px;font-size:18px;font-weight:bold;color:{{ aprovado ? '#047857' : '#dc2626' }};">
-                            {{ aprovado ? '✔' : '✖' }} {{ status.label }}
+                            {{ aprovado ? '✔' : '✖' }} {{ status }}
                         </div>
-                        <div style="margin-top:6px;font-size:13px;color:#64748b;">por {{ avaliador.nome }}</div>
+                        <div style="margin-top:6px;font-size:13px;color:#64748b;">por {{ avaliador }}</div>
                     </td></tr>
                 </table>
 
