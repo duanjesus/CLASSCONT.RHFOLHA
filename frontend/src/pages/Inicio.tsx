@@ -46,6 +46,10 @@ export function Inicio() {
   })
 
   const proxima = hoje.data?.proximaBatida ?? null
+  // A espera vem em segundos a partir do momento da resposta; `agora` (que anda a cada segundo)
+  // faz a contagem regressiva sem depender de o relógio do navegador bater com o do servidor.
+  const liberaEm = hoje.dataUpdatedAt + (hoje.data?.segundosAteProximaBatida ?? 0) * 1000
+  const espera = Math.max(0, Math.ceil((liberaEm - agora.getTime()) / 1000))
   const totais = espelho.data?.totais
   const pendenciasDias = espelho.data?.dias.filter((d) => d.situacao === 'FALTA' || d.situacao === 'INCOMPLETO') ?? []
 
@@ -70,9 +74,12 @@ export function Inicio() {
             </div>
             <div className="text-right">
               {proxima ? (
-                <Botao className="px-6 py-3 text-base" carregando={bater.isPending} onClick={() => bater.mutate()} disabled={hoje.data?.competenciaFechada}>
-                  Registrar {ROTULOS_BATIDA[proxima].toLowerCase()}
-                </Botao>
+                <>
+                  <Botao className="px-6 py-3 text-base" carregando={bater.isPending} onClick={() => bater.mutate()} disabled={hoje.data?.competenciaFechada || espera > 0}>
+                    Registrar {ROTULOS_BATIDA[proxima].toLowerCase()}
+                  </Botao>
+                  {espera > 0 && <p className="mt-2 text-xs text-slate-500">Disponível em {espera} s (1 minuto entre batidas)</p>}
+                </>
               ) : (
                 hoje.data && <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">Jornada de hoje concluída ✓</p>
               )}

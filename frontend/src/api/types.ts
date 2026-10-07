@@ -30,6 +30,8 @@ export interface PontoHoje {
   data: string
   batidas: string[]
   proximaBatida: TipoBatida | null
+  /** O servidor exige 1 minuto entre batidas: quanto falta, contado de quando a resposta saiu. */
+  segundosAteProximaBatida: number
   competenciaFechada: boolean
 }
 

@@ -14,6 +14,9 @@ final class PontoTest extends ApiTestCase
         self::assertResponseStatusCodeSame(201);
         self::assertCount(1, $hoje['batidas']);
         self::assertSame('SAIDA_ALMOCO', $hoje['proximaBatida']);
+        // A batida fica gravada no minuto cheio: a espera vai de 1 a 60 segundos
+        self::assertGreaterThan(0, $hoje['segundosAteProximaBatida']);
+        self::assertLessThanOrEqual(60, $hoje['segundosAteProximaBatida']);
 
         $erro = $this->api('POST', '/api/ponto/bater', 'ana@classcont.local');
         self::assertResponseStatusCodeSame(422);

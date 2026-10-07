@@ -29,17 +29,24 @@ final class PontoService
     }
 
     /**
-     * @return array{data: string, batidas: list<string>, proximaBatida: ?string, competenciaFechada: bool}
+     * @return array{data: string, batidas: list<string>, proximaBatida: ?string, segundosAteProximaBatida: int, competenciaFechada: bool}
      */
     public function situacaoDeHoje(Funcionario $funcionario): array
     {
         $agora = $this->clock->now();
         $batidas = $this->registros->doDia($funcionario, $agora);
+        $proxima = TipoBatida::proxima(\count($batidas));
+        $ultima = end($batidas);
 
         return [
             'data' => $agora->format('Y-m-d'),
             'batidas' => array_map(static fn (RegistroPonto $r) => $r->getMomento()->format('H:i'), $batidas),
-            'proximaBatida' => TipoBatida::proxima(\count($batidas))?->value,
+            'proximaBatida' => $proxima?->value,
+            // O front desabilita o botão e mostra a contagem em vez de deixar tentar e recusar.
+            // Vai em segundos (e não num horário) para não depender do relógio do navegador.
+            'segundosAteProximaBatida' => $proxima && $ultima
+                ? max(0, self::INTERVALO_MINIMO_SEGUNDOS - ($agora->getTimestamp() - $ultima->getMomento()->getTimestamp()))
+                : 0,
             'competenciaFechada' => $this->fechamentos->estaFechada(Competencia::daData($agora)),
         ];
     }
