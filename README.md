@@ -32,7 +32,7 @@ Sistema administrativo de **gestão de pessoal**: folha de ponto eletrônica, ba
 | **Painel** | `backend/src/Controller/Admin` + `templates/admin` | CRUDs com Symfony Forms e Twig, para uso do RH. |
 | **Segurança** | `config/packages/security.yaml`, `src/Security/Voter` | Dois firewalls (JWT *stateless* para `/api` e sessão para `/admin`) e Voters para as regras de acesso. |
 
-## Regras de negócio (bons tópicos de conversa)
+## Regras de negócio
 
 **Ponto** (`CalculadoraEspelho`)
 - As batidas são pareadas na ordem (entrada→saída, retorno→saída). Com número ímpar de batidas o dia fica **INCOMPLETO** e o período aberto não conta.
@@ -69,29 +69,6 @@ líquido  = bruto − desconto   (nunca negativo)
 - **Proteção contra força bruta**: `login_throttling` na API e no painel permite 5 tentativas erradas por e-mail/IP por minuto.
 - Na API, só erros de negócio ou de entrada (`RegraNegocioException`, `CompetenciaInvalidaException`) devolvem a mensagem ao cliente (422). Qualquer outra exceção vira 500, sem expor detalhes internos.
 - As ações destrutivas do painel exigem POST com token CSRF.
-
----
-
-## Guia de estudo do Twig neste projeto
-
-| Conceito | Onde ver |
-|---|---|
-| Herança (`extends` / `block`) em 3 níveis | `templates/base.html.twig` → `admin/layout.html.twig` → `admin/*/index.html.twig` |
-| `block()` para reaproveitar o conteúdo de um bloco | `templates/pdf/_layout.html.twig` (título repetido no cabeçalho) |
-| Macros (`import` / `macro`) com parâmetros padrão | `templates/admin/_macros.html.twig` (cabeçalho, badge de status, botão de exclusão com CSRF, seletor de mês) |
-| `include ... with {...} only` (partial isolado) | `templates/shared/_tabela_espelho.html.twig`, **o mesmo partial** usado na tela do painel e no PDF |
-| Form theme (sobrescrever blocos do `form_div_layout`) | `templates/admin/form/tema_tailwind.html.twig` |
-| Formulário genérico reaproveitado por todos os CRUDs | `templates/admin/crud/form.html.twig` |
-| **Extensão Twig própria** (filtros `horas`, `centavos`, `competencia`, `matricula`) | `src/Twig/RhExtension.php` (atributos `#[AsTwigFilter]`) |
-| Filtros do `twig/intl-extra` (`format_currency`, `format_date`) | `admin/cargo/index.html.twig`, `admin/feriado/index.html.twig` |
-| Arrow functions: `map`, `reduce`, `join` | `shared/_tabela_espelho.html.twig`, `admin/relatorio/auxilio.html.twig` |
-| `for ... else`, `loop.first`, iterar hash `for chave, valor in {...}` | `admin/funcionario/espelho.html.twig`, `admin/setor/index.html.twig` |
-| `set` com bloco (`{% set x %}...{% endset %}`) | `admin/dashboard.html.twig` |
-| Variáveis globais `app.user`, `app.flashes`, `app.request` | `admin/layout.html.twig` |
-| `csrf_token()`, `path()`, `asset()`, `importmap()` | macros e layouts do painel |
-| Twig gerando **PDF** (Dompdf) | `templates/pdf/*` + `src/Service/GeradorPdf.php` |
-| Twig gerando **e-mail** (`TemplatedEmail`) | `templates/emails/resultado_avaliacao.html.twig` + `src/Service/Notificador.php` |
-| Tailwind no Twig (sem Node, via `symfonycasts/tailwind-bundle`) | `assets/styles/app.css` |
 
 ---
 
