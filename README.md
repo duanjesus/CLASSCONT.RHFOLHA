@@ -70,6 +70,13 @@ líquido  = bruto − desconto   (nunca negativo)
 - Na API, só erros de negócio ou de entrada (`RegraNegocioException`, `CompetenciaInvalidaException`) devolvem a mensagem ao cliente (422). Qualquer outra exceção vira 500, sem expor detalhes internos.
 - As ações destrutivas do painel exigem POST com token CSRF.
 
+**Trilha de auditoria**
+- Toda criação, alteração e exclusão de cadastros, justificativas, auxílios e fechamentos fica registrada com autor, data, IP e o **antes → depois** de cada campo. A consulta fica no painel, em *Controle → Auditoria*, com filtros e paginação.
+- O registro é gravado por um listener do Doctrine (`src/Auditoria/AuditoriaListener.php`) **dentro da mesma transação** da alteração: ou os dois entram, ou nenhum.
+- A senha nunca vai para o log: fica registrado que mudou, sem o valor nem o hash.
+- O nome do autor e o rótulo do registro são gravados como texto, então o histórico continua legível mesmo que o cadastro mude depois.
+- As batidas de ponto ficam de fora (já são um registro por si só), assim como cargas feitas pelo console.
+
 ---
 
 ## Como rodar
@@ -125,9 +132,9 @@ docker compose exec php composer require <pacote>
 
 ## Qualidade
 
-- **65 testes / 238 asserções**:
+- **74 testes / 301 asserções**:
   - *Unitários*: cálculo do espelho (tolerância, faltas, abonos, feriados), auxílio (proporcionalidade, arredondamento, teto), `Competencia` e os filtros Twig.
-  - *Funcionais*: login JWT, bloqueio de desativados, força bruta, permissões (colega × chefia × outro setor × RH), o fluxo completo de aprovação com e-mail, PDF, validação e o smoke test de todas as telas Twig do painel.
+  - *Funcionais*: login JWT, bloqueio de desativados, força bruta, permissões (colega × chefia × outro setor × RH), o fluxo completo de aprovação com e-mail, PDF, validação, trilha de auditoria (inclusive que a senha não vaza) e o smoke test de todas as telas Twig do painel.
 - O **DAMA DoctrineTestBundle** isola cada teste numa transação.
 - **PHPStan nível 6** sem erros, **PHP-CS-Fixer** (regras @Symfony), `lint:twig` e `lint:container`.
 - O **GitHub Actions** roda backend (com Postgres) e frontend (lint e build) a cada push.
@@ -141,6 +148,7 @@ backend/
   src/Controller/Api/  API JSON (JWT)
   src/Controller/Admin painel Twig (sessão)
   src/Security/Voter/  quem pode ver/avaliar o quê
+  src/Auditoria/       listener do Doctrine que grava a trilha de auditoria
   src/Twig/            extensão com filtros próprios
   templates/           admin/, pdf/, emails/, shared/
   tests/Unit|Functional

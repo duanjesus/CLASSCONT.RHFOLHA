@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Repository\FechamentoCompetenciaRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -12,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  * não aceita novas justificativas nem avaliações (vai para a folha).
  */
 #[ORM\Entity(repositoryClass: FechamentoCompetenciaRepository::class)]
-class FechamentoCompetencia
+class FechamentoCompetencia implements Auditavel
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -51,5 +52,15 @@ class FechamentoCompetencia
     public function getFechadoEm(): \DateTimeImmutable
     {
         return $this->fechadoEm;
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Fechamento mensal';
+    }
+
+    public function rotuloAuditoria(): string
+    {
+        return 'Competência '.$this->competencia;
     }
 }

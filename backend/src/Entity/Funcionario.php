@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Repository\FuncionarioRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -17,7 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: FuncionarioRepository::class)]
 #[UniqueEntity('email', message: 'Este e-mail já está em uso.')]
 #[UniqueEntity('matricula', message: 'Esta matrícula já está em uso.')]
-class Funcionario implements UserInterface, PasswordAuthenticatedUserInterface
+class Funcionario implements UserInterface, PasswordAuthenticatedUserInterface, Auditavel
 {
     public const ROLE_FUNCIONARIO = 'ROLE_FUNCIONARIO';
     public const ROLE_CHEFIA = 'ROLE_CHEFIA';
@@ -266,6 +267,16 @@ class Funcionario implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     public function __toString(): string
+    {
+        return \sprintf('%s (%s)', $this->nome, $this->matricula);
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Funcionário';
+    }
+
+    public function rotuloAuditoria(): string
     {
         return \sprintf('%s (%s)', $this->nome, $this->matricula);
     }

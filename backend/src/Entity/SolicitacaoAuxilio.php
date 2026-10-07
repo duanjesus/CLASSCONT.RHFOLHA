@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Enum\Sentido;
 use App\Repository\SolicitacaoAuxilioRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -12,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /** Pedido de auxílio-transporte com o itinerário diário (linhas de ida e volta). */
 #[ORM\Entity(repositoryClass: SolicitacaoAuxilioRepository::class)]
-class SolicitacaoAuxilio
+class SolicitacaoAuxilio implements Auditavel
 {
     use AvaliavelTrait;
 
@@ -72,5 +73,15 @@ class SolicitacaoAuxilio
         }
 
         return $total;
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Auxílio-transporte';
+    }
+
+    public function rotuloAuditoria(): string
+    {
+        return \sprintf('Solicitação de %s em %s', $this->funcionario->getNome(), $this->criadoEm->format('d/m/Y'));
     }
 }

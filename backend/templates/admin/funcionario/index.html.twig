@@ -34,6 +34,7 @@
                         <td>{{ ui.sim_nao(f.ativo, 'Ativo', 'Inativo') }}</td>
                         <td class="space-x-3 text-right whitespace-nowrap">
                             <a href="{{ path('admin_funcionarios_espelho', {id: f.id}) }}" class="btn-link">Espelho</a>
+                            <a href="{{ path('admin_auditoria', {entidade: 'Funcionário', id: f.id}) }}" class="btn-link">Histórico</a>
                             <a href="{{ path('admin_funcionarios_editar', {id: f.id}) }}" class="btn-link">Editar</a>
                             <form method="post" action="{{ path('admin_funcionarios_alternar', {id: f.id}) }}" class="inline"
                                   data-confirmar="{{ f.ativo ? 'Desativar' : 'Reativar' }} {{ f.nome }}?">

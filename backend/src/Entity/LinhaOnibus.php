@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Repository\LinhaOnibusRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: LinhaOnibusRepository::class)]
 #[UniqueEntity('codigo', message: 'Já existe uma linha com este código.')]
-class LinhaOnibus
+class LinhaOnibus implements Auditavel
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -96,6 +97,16 @@ class LinhaOnibus
     }
 
     public function __toString(): string
+    {
+        return \sprintf('%s — %s', $this->codigo, $this->nome);
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Linha de ônibus';
+    }
+
+    public function rotuloAuditoria(): string
     {
         return \sprintf('%s — %s', $this->codigo, $this->nome);
     }

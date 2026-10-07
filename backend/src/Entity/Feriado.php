@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Repository\FeriadoRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: FeriadoRepository::class)]
 #[UniqueEntity('data', message: 'Já existe um feriado nesta data.')]
-class Feriado
+class Feriado implements Auditavel
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -55,5 +56,15 @@ class Feriado
         $this->descricao = $descricao;
 
         return $this;
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Feriado';
+    }
+
+    public function rotuloAuditoria(): string
+    {
+        return \sprintf('%s — %s', $this->data?->format('d/m/Y') ?? '?', $this->descricao);
     }
 }

@@ -52,6 +52,35 @@
     <div class="px-6 py-12 text-center text-sm text-slate-500">{{ mensagem }}</div>
 {% endmacro %}
 
+{#
+ # Paginação que preserva os filtros da URL.
+ # Mostra a primeira, a última e uma janela em volta da página atual.
+ #}
+{% macro paginacao(rota, pagina, paginas, parametros = {}) %}
+    {% if paginas > 1 %}
+        <nav class="mt-4 flex flex-wrap items-center justify-center gap-1 text-sm" aria-label="Paginação">
+            {% set base = 'rounded-lg border px-3 py-1.5 tabular-nums' %}
+            {% if pagina > 1 %}
+                <a class="{{ base }} border-slate-300 bg-white hover:bg-slate-50" href="{{ path(rota, parametros|merge({pagina: pagina - 1})) }}" rel="prev">&larr; Anterior</a>
+            {% endif %}
+            {% for p in 1..paginas %}
+                {% if p == 1 or p == paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                    {% if p == pagina %}
+                        <span class="{{ base }} border-marca-700 bg-marca-700 text-white" aria-current="page">{{ p }}</span>
+                    {% else %}
+                        <a class="{{ base }} border-slate-300 bg-white hover:bg-slate-50" href="{{ path(rota, parametros|merge({pagina: p})) }}">{{ p }}</a>
+                    {% endif %}
+                {% elseif p == pagina - 3 or p == pagina + 3 %}
+                    <span class="px-1 text-slate-400">…</span>
+                {% endif %}
+            {% endfor %}
+            {% if pagina < paginas %}
+                <a class="{{ base }} border-slate-300 bg-white hover:bg-slate-50" href="{{ path(rota, parametros|merge({pagina: pagina + 1})) }}" rel="next">Próxima &rarr;</a>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% endmacro %}
+
 {# Navegação entre meses: « agosto/2026 » #}
 {% macro seletor_competencia(competencia, rota, parametros = {}) %}
     <div class="inline-flex items-center rounded-lg border border-slate-300 bg-white text-sm shadow-sm">

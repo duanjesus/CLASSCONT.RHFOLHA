@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Repository\SetorRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -13,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SetorRepository::class)]
 #[UniqueEntity('sigla', message: 'Já existe um setor com esta sigla.')]
-class Setor
+class Setor implements Auditavel
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -93,6 +94,16 @@ class Setor
     }
 
     public function __toString(): string
+    {
+        return \sprintf('%s — %s', $this->sigla, $this->nome);
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Setor';
+    }
+
+    public function rotuloAuditoria(): string
     {
         return \sprintf('%s — %s', $this->sigla, $this->nome);
     }

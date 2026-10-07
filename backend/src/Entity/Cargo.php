@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Auditoria\Auditavel;
 use App\Repository\CargoRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CargoRepository::class)]
 #[UniqueEntity('nome', message: 'Já existe um cargo com este nome.')]
-class Cargo
+class Cargo implements Auditavel
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -65,6 +66,16 @@ class Cargo
     }
 
     public function __toString(): string
+    {
+        return $this->nome;
+    }
+
+    public static function tipoAuditoria(): string
+    {
+        return 'Cargo';
+    }
+
+    public function rotuloAuditoria(): string
     {
         return $this->nome;
     }

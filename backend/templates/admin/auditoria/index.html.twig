@@ -1,0 +1,160 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'admin/_macros.html.twig' as ui %}
+
+{% block title %}Auditoria{% endblock %}
+
+{#
+ # Parâmetros de filtro preservados nos links de paginação.
+ # |filter remove os vazios para a URL ficar limpa.
+ #}
+{% set query = {
+    entidade: filtros.entidade,
+    id: filtros.id,
+    acao: filtros.acao ? filtros.acao.value : '',
+    autor: filtros.autor,
+    de: filtros.de ? filtros.de|date('Y-m-d') : '',
+    ate: filtros.ate ? filtros.ate|date('Y-m-d') : '',
+}|filter(v => v is not same as('')) %}
+
+{% set cores_acao = {
+    CRIACAO: 'bg-emerald-50 text-emerald-700',
+    ALTERACAO: 'bg-sky-50 text-sky-700',
+    EXCLUSAO: 'bg-red-50 text-red-700',
+} %}
+
+{# Nomes de campo para leitura humana; o que não estiver aqui cai no filtro |humanize #}
+{% set nomes_campo = {
+    descricao: 'Descrição', salarioBase: 'Salário-base', password: 'Senha', matricula: 'Matrícula',
+    email: 'E-mail', setor: 'Lotação', jornadaDiariaMinutos: 'Jornada diária (min)', dataAdmissao: 'Data de admissão',
+    roles: 'Perfis', codigo: 'Código', chefe: 'Chefia', competencia: 'Competência', funcionario: 'Funcionário',
+    avaliadoPor: 'Avaliado por', avaliadoEm: 'Avaliado em', observacaoAvaliacao: 'Observação da avaliação',
+    criadoEm: 'Criado em', fechadoPor: 'Fechado por', fechadoEm: 'Fechado em', status: 'Situação',
+} %}
+
+{# Valor do "antes → depois": nulo, booleano e texto têm apresentações diferentes #}
+{% macro valor(v) %}
+    {%- if v is null -%}
+        <span class="text-slate-400">vazio</span>
+    {%- elseif v is same as(true) -%}
+        sim
+    {%- elseif v is same as(false) -%}
+        não
+    {%- else -%}
+        {{ v }}
+    {%- endif -%}
+{% endmacro %}
+
+{% block conteudo %}
+    {{ ui.cabecalho('Trilha de auditoria', 'Quem criou, alterou ou excluiu cada registro, quando e de qual endereço. Os registros não podem ser editados.') }}
+
+    <form method="get" class="cartao mb-4 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6" role="search">
+        <div>
+            <label for="f-entidade" class="rotulo">Tipo</label>
+            <select id="f-entidade" name="entidade" class="campo">
+                <option value="">Todos</option>
+                {% for e in entidades %}
+                    <option value="{{ e }}" {{ e == filtros.entidade ? 'selected' }}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="f-acao" class="rotulo">Ação</label>
+            <select id="f-acao" name="acao" class="campo">
+                <option value="">Todas</option>
+                {% for a in acoes %}
+                    <option value="{{ a.value }}" {{ filtros.acao is same as(a) ? 'selected' }}>{{ a.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="f-autor" class="rotulo">Autor</label>
+            <input id="f-autor" type="search" name="autor" value="{{ filtros.autor }}" class="campo" placeholder="Nome">
+        </div>
+        <div>
+            <label for="f-de" class="rotulo">De</label>
+            <input id="f-de" type="date" name="de" value="{{ query.de ?? '' }}" class="campo">
+        </div>
+        <div>
+            <label for="f-ate" class="rotulo">Até</label>
+            <input id="f-ate" type="date" name="ate" value="{{ query.ate ?? '' }}" class="campo">
+        </div>
+        <div class="flex items-end gap-2">
+            {% if filtros.id %}<input type="hidden" name="id" value="{{ filtros.id }}">{% endif %}
+            <button class="btn btn-primario flex-1">Filtrar</button>
+            {% if query is not empty %}<a href="{{ path('admin_auditoria') }}" class="btn btn-secundario">Limpar</a>{% endif %}
+        </div>
+    </form>
+
+    {% if filtros.id %}
+        <p class="mb-3 text-sm text-slate-600">
+            Mostrando o histórico de um único registro ({{ filtros.entidade }} nº {{ filtros.id }}).
+            <a href="{{ path('admin_auditoria') }}" class="btn-link">Ver tudo</a>
+        </p>
+    {% endif %}
+
+    <div class="cartao overflow-hidden">
+        <p class="border-b border-slate-100 px-4 py-3 text-sm text-slate-500">
+            {{ total }} registro{{ total == 1 ? '' : 's' }}{% if paginas > 1 %} · página {{ pagina }} de {{ paginas }}{% endif %}
+        </p>
+        <div class="overflow-x-auto">
+            <table class="tabela">
+                <thead>
+                    <tr><th>Quando</th><th>Autor</th><th>Ação</th><th>Registro</th><th>O que mudou</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                        <tr class="align-top">
+                            <td class="whitespace-nowrap tabular-nums">
+                                {{ r.ocorridoEm|date('d/m/Y') }}
+                                <span class="text-slate-500">{{ r.ocorridoEm|date('H:i:s') }}</span>
+                            </td>
+                            <td>
+                                <div class="font-medium text-slate-900">{{ r.autorNome }}</div>
+                                {% if r.ip %}<div class="text-xs tabular-nums text-slate-400">{{ r.ip }}</div>{% endif %}
+                            </td>
+                            <td>
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ cores_acao[r.acao.value] }}">{{ r.acao.label }}</span>
+                            </td>
+                            <td>
+                                <div class="text-xs uppercase tracking-wide text-slate-500">{{ r.entidade }}</div>
+                                <a class="btn-link" href="{{ path('admin_auditoria', {entidade: r.entidade, id: r.entidadeId}) }}" title="Ver o histórico deste registro">{{ r.rotulo }}</a>
+                            </td>
+                            <td class="min-w-64">
+                                {% if r.acao.value == 'EXCLUSAO' %}
+                                    <span class="text-slate-400">Registro removido</span>
+                                {% elseif r.alteracoes is empty %}
+                                    <span class="text-slate-400">—</span>
+                                {% else %}
+                                    {# Criação mostra só os valores iniciais; alteração mostra antes → depois #}
+                                    <details {{ r.acao.value == 'ALTERACAO' ? 'open' }}>
+                                        <summary class="cursor-pointer text-sm text-slate-600">
+                                            {{ r.alteracoes|length }} campo{{ r.alteracoes|length == 1 ? '' : 's' }}
+                                        </summary>
+                                        <dl class="mt-2 space-y-1.5 text-sm">
+                                            {% for campo, par in r.alteracoes %}
+                                                <div>
+                                                    <dt class="inline font-medium text-slate-700">{{ nomes_campo[campo] ?? campo|humanize }}:</dt>
+                                                    <dd class="inline">
+                                                        {% if r.acao.value == 'ALTERACAO' %}
+                                                            <span class="text-red-700 line-through decoration-red-300">{{ _self.valor(par[0]) }}</span>
+                                                            <span class="text-slate-400" aria-label="passou a ser">→</span>
+                                                        {% endif %}
+                                                        <span class="text-emerald-800">{{ _self.valor(par[1]) }}</span>
+                                                    </dd>
+                                                </div>
+                                            {% endfor %}
+                                        </dl>
+                                    </details>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">{{ ui.vazio('Nenhum registro de auditoria para estes filtros.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{ ui.paginacao('admin_auditoria', pagina, paginas, query) }}
+{% endblock %}
