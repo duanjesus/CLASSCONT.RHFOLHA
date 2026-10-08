@@ -51,4 +51,6 @@
             </tbody>
         </table>
     </div>
+
+    {{ ui.paginacao('admin_funcionarios', pagina, paginas, busca ? {q: busca} : {}) }}
 {% endblock %}

@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Domain\Auxilio\CalculadoraAuxilio;
 use App\Domain\Auxilio\DemonstrativoAuxilio;
 use App\Domain\Competencia;
+use App\Domain\Ponto\EspelhoMensal;
 use App\Entity\Funcionario;
 use App\Entity\SolicitacaoAuxilio;
 use App\Enum\Sentido;
@@ -98,15 +99,43 @@ final class AuxilioService
             return null;
         }
 
-        // Os dias trabalhados vêm do ponto: é aqui que os dois módulos se conectam.
-        $espelho = $this->espelhos->gerar($funcionario, $competencia);
+        return $this->calcular($vigente, $this->espelhos->gerar($funcionario, $competencia));
+    }
 
+    /**
+     * Folha do mês: um demonstrativo para cada auxílio vigente, com um número fixo
+     * de consultas (os espelhos de todos são montados em lote).
+     *
+     * @return list<array{solicitacao: SolicitacaoAuxilio, demonstrativo: DemonstrativoAuxilio}>
+     */
+    public function folha(Competencia $competencia): array
+    {
+        $vigentes = $this->solicitacoes->vigentes();
+        $espelhos = $this->espelhos->gerarParaVarios(
+            array_map(static fn (SolicitacaoAuxilio $s) => $s->getFuncionario(), $vigentes),
+            $competencia,
+        );
+
+        $folha = [];
+        foreach ($vigentes as $solicitacao) {
+            $folha[] = [
+                'solicitacao' => $solicitacao,
+                'demonstrativo' => $this->calcular($solicitacao, $espelhos[(int) $solicitacao->getFuncionario()->getId()]),
+            ];
+        }
+
+        return $folha;
+    }
+
+    private function calcular(SolicitacaoAuxilio $vigente, EspelhoMensal $espelho): DemonstrativoAuxilio
+    {
+        // Os dias trabalhados vêm do ponto: é aqui que os dois módulos se conectam.
         return $this->calculadora->calcular(
-            competencia: $competencia,
+            competencia: $espelho->competencia,
             valorDiarioCentavos: $vigente->getValorDiarioCentavos(),
             diasTrabalhados: $espelho->diasTrabalhados,
             diasUteis: $espelho->diasUteis,
-            salarioBaseCentavos: $funcionario->getCargo()?->getSalarioBaseCentavos() ?? 0,
+            salarioBaseCentavos: $vigente->getFuncionario()->getCargo()?->getSalarioBaseCentavos() ?? 0,
             percentualDesconto: $this->percentualDescontoAuxilio,
         );
     }

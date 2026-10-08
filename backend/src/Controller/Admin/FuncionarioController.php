@@ -29,10 +29,14 @@ final class FuncionarioController extends AdminController
     public function index(Request $request, FuncionarioRepository $funcionarios): Response
     {
         $busca = $request->query->getString('q');
+        $pagina = max(1, $request->query->getInt('pagina', 1));
+        $resultado = $funcionarios->listagemAdmin($busca, $pagina);
 
         return $this->render('admin/funcionario/index.html.twig', [
-            'funcionarios' => $funcionarios->listagemAdmin($busca),
+            'funcionarios' => $resultado,
             'busca' => $busca,
+            'pagina' => $pagina,
+            'paginas' => max(1, (int) ceil(\count($resultado) / FuncionarioRepository::POR_PAGINA)),
         ]);
     }
 

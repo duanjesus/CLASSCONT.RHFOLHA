@@ -12,6 +12,7 @@ use App\Repository\JustificativaRepository;
 use App\Security\Voter\AvaliacaoVoter;
 use App\Service\JustificativaService;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
@@ -27,9 +28,17 @@ final class JustificativaController extends ApiController
     }
 
     #[Route('', name: 'api_justificativas_minhas', methods: ['GET'])]
-    public function minhas(): JsonResponse
+    public function minhas(Request $request): JsonResponse
     {
-        return $this->json(array_map($this->repr->justificativa(...), $this->justificativas->doFuncionario($this->usuario())));
+        $pagina = max(1, $request->query->getInt('pagina', 1));
+        $resultado = $this->justificativas->doFuncionario($this->usuario(), $pagina);
+        $total = \count($resultado);
+
+        // O corpo continua sendo a lista (contrato estável); os totais vão em cabeçalhos.
+        return $this->json(array_map($this->repr->justificativa(...), iterator_to_array($resultado, false)), headers: [
+            'X-Total' => $total,
+            'X-Paginas' => max(1, (int) ceil($total / JustificativaRepository::POR_PAGINA)),
+        ]);
     }
 
     #[Route('', name: 'api_justificativas_criar', methods: ['POST'])]

@@ -10,6 +10,7 @@ use App\Entity\Justificativa;
 use App\Enum\StatusAvaliacao;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,15 +18,31 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class JustificativaRepository extends ServiceEntityRepository
 {
+    public const POR_PAGINA = 10;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Justificativa::class);
     }
 
-    /** @return list<Justificativa> */
-    public function doFuncionario(Funcionario $funcionario): array
+    /**
+     * Pedidos do funcionário, do mais recente para o mais antigo, paginados.
+     *
+     * @return Paginator<Justificativa>
+     */
+    public function doFuncionario(Funcionario $funcionario, int $pagina): Paginator
     {
-        return $this->findBy(['funcionario' => $funcionario], ['data' => 'DESC', 'id' => 'DESC']);
+        $qb = $this->createQueryBuilder('j')
+            ->addSelect('avaliador')
+            ->leftJoin('j.avaliadoPor', 'avaliador')
+            ->where('j.funcionario = :f')
+            ->setParameter('f', $funcionario)
+            ->orderBy('j.data', 'DESC')
+            ->addOrderBy('j.id', 'DESC')
+            ->setFirstResult((max(1, $pagina) - 1) * self::POR_PAGINA)
+            ->setMaxResults(self::POR_PAGINA);
+
+        return new Paginator($qb, fetchJoinCollection: false);
     }
 
     /** Existe outra justificativa pendente ou aprovada para o mesmo dia? */
@@ -42,14 +59,24 @@ class JustificativaRepository extends ServiceEntityRepository
             ->getSingleScalarResult() > 0;
     }
 
-    /** @return array<string, string> Y-m-d => rótulo do abono (justificativas aprovadas) */
-    public function abonosNaCompetencia(Funcionario $funcionario, Competencia $competencia): array
+    /**
+     * Abonos do mês de vários funcionários numa única consulta.
+     *
+     * @param list<Funcionario> $funcionarios
+     *
+     * @return array<int, array<string, string>> id do funcionário => Y-m-d => rótulo do abono
+     */
+    public function abonosNaCompetenciaDeVarios(array $funcionarios, Competencia $competencia): array
     {
+        if ([] === $funcionarios) {
+            return [];
+        }
+
         /** @var list<Justificativa> $aprovadas */
         $aprovadas = $this->createQueryBuilder('j')
-            ->where('j.funcionario = :f AND j.status = :status')
+            ->where('j.funcionario IN (:fs) AND j.status = :status')
             ->andWhere('j.data >= :inicio AND j.data < :fim')
-            ->setParameter('f', $funcionario)
+            ->setParameter('fs', $funcionarios)
             ->setParameter('status', StatusAvaliacao::Aprovada)
             ->setParameter('inicio', $competencia->primeiroDia())
             ->setParameter('fim', $competencia->inicioDoProximoMes())
@@ -58,10 +85,41 @@ class JustificativaRepository extends ServiceEntityRepository
 
         $mapa = [];
         foreach ($aprovadas as $j) {
-            $mapa[$j->getData()->format('Y-m-d')] = 'Abonado: '.$j->getTipo()->label();
+            // getId() de uma associação já carregada/proxy não dispara consulta
+            $mapa[(int) $j->getFuncionario()->getId()][$j->getData()->format('Y-m-d')] = 'Abonado: '.$j->getTipo()->label();
         }
 
         return $mapa;
+    }
+
+    /**
+     * Quantidade de justificativas pendentes de cada funcionário, numa única consulta.
+     *
+     * @param list<Funcionario> $funcionarios
+     *
+     * @return array<int, int> id do funcionário => pendentes (quem não tem não aparece)
+     */
+    public function contarPendentesDeVarios(array $funcionarios): array
+    {
+        if ([] === $funcionarios) {
+            return [];
+        }
+
+        /** @var list<array{fid: int|string, total: int|string}> $linhas */
+        $linhas = $this->createQueryBuilder('j')
+            ->select('IDENTITY(j.funcionario) AS fid', 'COUNT(j.id) AS total')
+            ->where('j.funcionario IN (:fs) AND j.status = :pendente')
+            ->setParameter('fs', $funcionarios)
+            ->setParameter('pendente', StatusAvaliacao::Pendente)
+            ->groupBy('j.funcionario')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column(
+            array_map(static fn (array $l) => ['fid' => (int) $l['fid'], 'total' => (int) $l['total']], $linhas),
+            'total',
+            'fid',
+        );
     }
 
     /**
@@ -81,17 +139,9 @@ class JustificativaRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function contarPendentes(?Funcionario $doFuncionario = null): int
+    public function contarPendentes(): int
     {
-        $qb = $this->createQueryBuilder('j')
-            ->select('COUNT(j.id)')
-            ->where('j.status = :pendente')
-            ->setParameter('pendente', StatusAvaliacao::Pendente);
-        if ($doFuncionario) {
-            $qb->andWhere('j.funcionario = :f')->setParameter('f', $doFuncionario);
-        }
-
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return $this->count(['status' => StatusAvaliacao::Pendente]);
     }
 
     /** @return list<Justificativa> */

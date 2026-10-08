@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Funcionario;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -16,6 +17,8 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
  */
 class FuncionarioRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
+    public const POR_PAGINA = 20;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Funcionario::class);
@@ -40,7 +43,9 @@ class FuncionarioRepository extends ServiceEntityRepository implements PasswordU
     {
         /** @var list<Funcionario> */
         return $this->createQueryBuilder('f')
+            ->addSelect('c')
             ->join('f.setor', 's')
+            ->join('f.cargo', 'c')
             ->where('s.chefe = :chefe')
             ->andWhere('f != :chefe')
             ->andWhere('f.ativo = true')
@@ -50,22 +55,32 @@ class FuncionarioRepository extends ServiceEntityRepository implements PasswordU
             ->getResult();
     }
 
-    /** @return list<Funcionario> */
-    public function listagemAdmin(?string $busca): array
+    /**
+     * Listagem paginada do painel. Setor, cargo e setores chefiados (para o selo
+     * "Chefia") já vêm juntos, sem consultas extras por linha.
+     *
+     * @return Paginator<Funcionario>
+     */
+    public function listagemAdmin(?string $busca, int $pagina): Paginator
     {
         $qb = $this->createQueryBuilder('f')
-            ->addSelect('s', 'c')
+            ->addSelect('s', 'c', 'chefiados')
             ->join('f.setor', 's')
             ->join('f.cargo', 'c')
-            ->orderBy('f.nome');
+            ->leftJoin('f.setoresChefiados', 'chefiados')
+            ->orderBy('f.nome')
+            ->addOrderBy('f.id');
 
         if (null !== $busca && '' !== trim($busca)) {
             $qb->andWhere('LOWER(f.nome) LIKE :busca OR f.matricula LIKE :busca OR LOWER(f.email) LIKE :busca')
                 ->setParameter('busca', '%'.mb_strtolower(trim($busca)).'%');
         }
 
-        /** @var list<Funcionario> */
-        return $qb->getQuery()->getResult();
+        $qb->setFirstResult((max(1, $pagina) - 1) * self::POR_PAGINA)->setMaxResults(self::POR_PAGINA);
+
+        // fetchJoinCollection: há join com coleção, então o Paginator limita por
+        // funcionário (e não por linha do SQL)
+        return new Paginator($qb, fetchJoinCollection: true);
     }
 
     public function contarAtivos(): int

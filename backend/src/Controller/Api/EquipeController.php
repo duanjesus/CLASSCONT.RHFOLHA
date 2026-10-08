@@ -26,14 +26,19 @@ final class EquipeController extends ApiController
         $competencia = $this->competencia($request);
         $equipe = [];
 
-        foreach ($this->funcionarios->equipeDe($this->usuario()) as $membro) {
-            $espelho = $espelhos->gerar($membro, $competencia);
+        // Tudo em lote: o número de consultas não depende do tamanho da equipe
+        $membros = $this->funcionarios->equipeDe($this->usuario());
+        $espelhosPorId = $espelhos->gerarParaVarios($membros, $competencia);
+        $pendencias = $justificativas->contarPendentesDeVarios($membros);
+
+        foreach ($membros as $membro) {
+            $espelho = $espelhosPorId[(int) $membro->getId()];
             $equipe[] = [
                 'funcionario' => $repr->funcionarioResumo($membro) + ['cargo' => $membro->getCargo()?->getNome()],
                 'saldoMinutos' => $espelho->saldoMinutos,
                 'faltas' => $espelho->faltas,
                 'diasTrabalhados' => $espelho->diasTrabalhados,
-                'pendencias' => $justificativas->contarPendentes($membro),
+                'pendencias' => $pendencias[(int) $membro->getId()] ?? 0,
             ];
         }
 

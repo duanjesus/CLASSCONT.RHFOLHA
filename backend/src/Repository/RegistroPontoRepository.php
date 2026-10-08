@@ -29,18 +29,37 @@ class RegistroPontoRepository extends ServiceEntityRepository
     }
 
     /**
-     * Batidas do mês agrupadas por dia, no formato esperado pela CalculadoraEspelho.
+     * Batidas do mês de VÁRIOS funcionários numa única consulta (evita N+1 nas
+     * telas de equipe e de folha). Seleciona só as duas colunas necessárias.
      *
-     * @return array<string, list<\DateTimeImmutable>>
+     * @param list<Funcionario> $funcionarios
+     *
+     * @return array<int, array<string, list<\DateTimeImmutable>>> id do funcionário => dia => batidas
      */
-    public function porDiaNaCompetencia(Funcionario $funcionario, Competencia $competencia): array
+    public function porDiaNaCompetenciaDeVarios(array $funcionarios, Competencia $competencia): array
     {
-        $porDia = [];
-        foreach ($this->doPeriodo($funcionario, $competencia->primeiroDia(), $competencia->inicioDoProximoMes()) as $registro) {
-            $porDia[$registro->getMomento()->format('Y-m-d')][] = $registro->getMomento();
+        if ([] === $funcionarios) {
+            return [];
         }
 
-        return $porDia;
+        /** @var list<array{fid: int|string, momento: \DateTimeImmutable}> $linhas */
+        $linhas = $this->createQueryBuilder('r')
+            ->select('IDENTITY(r.funcionario) AS fid', 'r.momento')
+            ->where('r.funcionario IN (:fs)')
+            ->andWhere('r.momento >= :inicio AND r.momento < :fim')
+            ->setParameter('fs', $funcionarios)
+            ->setParameter('inicio', $competencia->primeiroDia())
+            ->setParameter('fim', $competencia->inicioDoProximoMes())
+            ->orderBy('r.momento', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        $resultado = [];
+        foreach ($linhas as $linha) {
+            $resultado[(int) $linha['fid']][$linha['momento']->format('Y-m-d')][] = $linha['momento'];
+        }
+
+        return $resultado;
     }
 
     /** @return list<RegistroPonto> */

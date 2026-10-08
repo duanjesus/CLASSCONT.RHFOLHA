@@ -52,8 +52,12 @@ class SolicitacaoAuxilioRepository extends ServiceEntityRepository
     {
         /** @var list<SolicitacaoAuxilio> */
         return $this->createQueryBuilder('s')
-            ->addSelect('f')
+            ->addSelect('f', 'cargo', 'setor', 't', 'l')
             ->join('s.funcionario', 'f')
+            ->join('f.cargo', 'cargo')
+            ->join('f.setor', 'setor')
+            ->leftJoin('s.trajetos', 't')
+            ->leftJoin('t.linha', 'l')
             ->where('s.status = :aprovada')
             ->setParameter('aprovada', StatusAvaliacao::Aprovada)
             ->orderBy('f.nome')

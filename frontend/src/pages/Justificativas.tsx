@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, mensagemErro } from '../api/client'
 import type { Justificativa, TipoJustificativa } from '../api/types'
@@ -19,9 +19,20 @@ export function Justificativas() {
   const [tipo, setTipo] = useState<TipoJustificativa>('FALTA_JUSTIFICADA')
   const [motivo, setMotivo] = useState('')
 
+  const [pagina, setPagina] = useState(1)
+
+  // A API devolve a lista no corpo e os totais nos cabeçalhos X-Total / X-Paginas
   const lista = useQuery({
-    queryKey: ['justificativas'],
-    queryFn: async () => (await api.get<Justificativa[]>('/justificativas')).data,
+    queryKey: ['justificativas', pagina],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const resp = await api.get<Justificativa[]>('/justificativas', { params: { pagina } })
+      return {
+        itens: resp.data,
+        total: Number(resp.headers['x-total'] ?? resp.data.length),
+        paginas: Number(resp.headers['x-paginas'] ?? 1),
+      }
+    },
   })
 
   const criar = useMutation({
@@ -29,6 +40,7 @@ export function Justificativas() {
     onSuccess: () => {
       setData('')
       setMotivo('')
+      setPagina(1) // o pedido novo aparece no topo da primeira página
       queryClient.invalidateQueries({ queryKey: ['justificativas'] })
     },
   })
@@ -72,9 +84,9 @@ export function Justificativas() {
         <Cartao className="overflow-hidden lg:col-span-2">
           <h2 className="border-b border-slate-100 px-5 py-4 font-semibold text-slate-900">Meus pedidos</h2>
           {lista.isLoading && <Carregando />}
-          {lista.data?.length === 0 && <Vazio>Você ainda não enviou justificativas.</Vazio>}
+          {lista.data?.total === 0 && <Vazio>Você ainda não enviou justificativas.</Vazio>}
           <ul className="divide-y divide-slate-100">
-            {lista.data?.map((j) => (
+            {lista.data?.itens.map((j) => (
               <li key={j.id} className="px-5 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium text-slate-900">
@@ -92,6 +104,15 @@ export function Justificativas() {
               </li>
             ))}
           </ul>
+          {lista.data && lista.data.paginas > 1 && (
+            <nav className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-sm" aria-label="Paginação">
+              <Botao variante="secundario" onClick={() => setPagina((p) => p - 1)} disabled={pagina <= 1}>← Mais recentes</Botao>
+              <span className="tabular-nums text-slate-500">
+                Página {pagina} de {lista.data.paginas} · {lista.data.total} pedidos
+              </span>
+              <Botao variante="secundario" onClick={() => setPagina((p) => p + 1)} disabled={pagina >= lista.data.paginas}>Mais antigos →</Botao>
+            </nav>
+          )}
         </Cartao>
       </div>
     </>

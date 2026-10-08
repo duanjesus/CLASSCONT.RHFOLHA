@@ -82,6 +82,11 @@ líquido  = bruto − desconto   (nunca negativo)
 - Se o envio falhar, há **3 novas tentativas** com espera crescente (5 s, 20 s, 80 s). Esgotadas, a mensagem vai para a fila `failed` em vez de se perder, e o painel do RH mostra um alerta.
 - O e-mail é renderizado pelo Twig antes de entrar na fila, e o contexto leva só valores simples: nenhuma entidade do Doctrine é serializada.
 
+**Desempenho e paginação**
+- As telas que calculam um espelho por pessoa ("Minha equipe" e a folha do auxílio) buscam batidas, abonos e pendências de **todos de uma vez**. O número de consultas é fixo: com mais 10 pessoas na equipe, caiu de 54 para 7.
+- Um teste (`DesempenhoTest`) conta as consultas com o profiler do Symfony e falha se elas crescerem com a quantidade de servidores, para o N+1 não voltar.
+- A lista de funcionários do painel (20 por página) e "Minhas justificativas" na API (10 por página) são paginadas. Na API o corpo continua sendo a lista, e os totais vão nos cabeçalhos `X-Total` e `X-Paginas`.
+
 ---
 
 ## Como rodar
@@ -145,7 +150,7 @@ docker compose exec php composer require <pacote>
 
 ## Qualidade
 
-- **75 testes / 309 asserções**:
+- **79 testes / 351 asserções**:
   - *Unitários*: cálculo do espelho (tolerância, faltas, abonos, feriados), auxílio (proporcionalidade, arredondamento, teto), `Competencia` e os filtros Twig.
   - *Funcionais*: login JWT, bloqueio de desativados, força bruta, permissões (colega × chefia × outro setor × RH), o fluxo completo de aprovação com e-mail, PDF, validação, trilha de auditoria (inclusive que a senha não vaza) e o smoke test de todas as telas Twig do painel.
 - O **DAMA DoctrineTestBundle** isola cada teste numa transação.
